@@ -222,7 +222,8 @@ jobs:
         run: |         
          export SOURCE_DATE_EPOCH=$(date -d "2024-12-17 23:36:49 UTC" +%s)
          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
-   
+
+
       - name: Build Kernel
         run: |
          # 加入 clang 到 PATH
@@ -243,6 +244,8 @@ jobs:
          # 创建输出目录并复制 Image
          mkdir -p ../dist
          cp out/arch/arm64/boot/Image ../dist/
+
+
       - name: Make AnyKernel3 patch (optional)
         if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }}
         run: |
