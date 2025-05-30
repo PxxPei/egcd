@@ -49,11 +49,6 @@ on:
         required: false
         default: false
         type: boolean
-      kernel_time:
-        description: '内核构建时间（UTC 时间字符串，例如 "2024-12-17 23:36:49 UTC"）'
-        required: false
-        default: '2024-12-17 23:36:49 UTC'
-        type: string
       
   
 
