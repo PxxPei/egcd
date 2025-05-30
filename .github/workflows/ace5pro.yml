@@ -63,7 +63,7 @@ jobs:
       - name: Configure Git
         run: |
          git config --global user.name "build"
-         git config --global user.email "3620603668@qq.com"
+         git config --global user.email "2106456897@qq.com"
       # 1. 安装构建依赖（包括 ccache）
       - name: Install Dependencies
         run: |
@@ -95,7 +95,6 @@ jobs:
          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
          chmod a+x ~/repo
          sudo mv ~/repo /usr/local/bin/repo
-
       - name: Initialize repo and sync
         run: |
          mkdir kernel_workspace && cd kernel_workspace
@@ -198,7 +197,7 @@ jobs:
       - name: Add make name
         run: |
          cd kernel_workspace/kernel_platform
-         sed -i "s/\${scm_version}/$KERNEL_NAME/g" ./common/scripts/setlocalversion
+         sed -i "s/\${scm_version}/${{ github.event.inputs.KERNEL_NAME }}/g" ./common/scripts/setlocalversion
          
       - name: 设置 CONFIG_LOCALVERSION
         run: |
@@ -237,3 +236,31 @@ jobs:
          LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS=-Wno-error"
          # 进入源码目录
          cd kernel_workspace/kernel_platform/common
+         # 执行 defconfig
+         make -j$(nproc) $MAKE_ARGS gki_defconfig
+         # 编译全部目标
+         make -j$(nproc) $MAKE_ARGS all
+         # 创建输出目录并复制 Image
+         mkdir -p ../dist
+         cp out/arch/arm64/boot/Image ../dist/
+      - name: Make AnyKernel3 patch (optional)
+        if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }}
+        run: |
+          cd kernel_workspace/kernel_platform/dist
+          curl -LO https://github.com/ShirkNeko/SukiSU_KernelPatch_patch/releases/download/0.11-beta/patch_linux
+          chmod +x patch_linux
+          ./patch_linux
+          rm -f Image
+          mv oImage Image
+      - name: Prepare AnyKernel3 package
+        run: |
+          cd kernel_workspace/kernel_platform/dist
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
+          rm -rf AnyKernel3/.git
+          rm -f AnyKernel3/push.sh
+          cp Image AnyKernel3/
+      - name: Upload AnyKernel3 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyKernel3_oneplus_ace5pro_${{ github.event.inputs.KSUVER }}
+          path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
