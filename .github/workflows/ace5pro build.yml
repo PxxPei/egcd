@@ -299,11 +299,11 @@ jobs:
          cp out/arch/arm64/boot/Image ../dist/
 
 
-       - name: Build kernel with -O3 optimization
-          run: |
-          # 加入 clang 到 PATH
-          export PATH="
-          $$
+    - name: Build kernel with -O3 optimization
+      run: |
+        # 加入 clang 到 PATH
+        export PATH="
+$$
 {{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux
   - x86/clang
   - r510928/bin:
@@ -347,7 +347,6 @@ MAKE_ARGS all
         # 创建输出目录并复制 Image
         mkdir -p ../dist
         cp out/arch/arm64/boot/Image ../dist/
-
 
 
       - name: 验证内核构建时间
