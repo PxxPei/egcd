@@ -71,7 +71,7 @@ jobs:
       - name: Configure Git
         run: |
          git config --global user.name "build"
-         git config --global user.email "2106456897@qq.com"
+         git config --global user.email "3620603668@qq.com"
 
       # 1. 拉取仓库  
       - name: Checkout  
@@ -134,34 +134,27 @@ jobs:
          export KSU_VERSION=$KSU_VERSION
          sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
 
-      - name: Set up SUSFS & apply patches
+      - name: Set up susfs
         run: |
-         set -e
-
-         cd kernel_workspace
-         git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}
-         git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
-         git clone https://$TOKEN@github.com/egcd521/111.git
-         cd kernel_platform
-         cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch ./common/ || true
-         mkdir -p ./common/fs ./common/include/linux ./common/lib ./common/crypto
-         cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
-         cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
-         cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux || true
-         cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib || true
-         cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto || true
-         cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/ || true
-         cp ../111/boot.patch ./common/
-         cd ./common
-         if [ "${{ github.event.inputs.FEIL }}" != "oneplus_13t" ]; then
-         sed -i 's/-32,12 +32,38/-32,11 +32,37/g' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch
-         sed -i '/#include <trace\/hooks\/fs.h>/d' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch
-         fi
-         patch -p1 < 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch || true
-         cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
-         patch -p1 -F 3 < syscall_hooks.patch || true
-         patch -s -p1 -F 3 < boot.patch
-         echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
+           cd kernel_workspace
+           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}
+           git clone https://github.com/ExmikoN/SukiSU_patch.git
+           cd kernel_platform        
+           cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch ./common/
+           cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
+           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
+           #lz4k
+           cp -r ../SukiSU_patch/other/lz4k/include/linux/* ./common/include/linux
+           cp -r ../SukiSU_patch/other/lz4k/lib/* ./common/lib
+           cp -r ../SukiSU_patch/other/lz4k/crypto/* ./common/crypto
+           # Apply patches
+           cd ./common
+           sed -i 's/-32,12 +32,38/-32,11 +32,37/g' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch
+           sed -i '/#include <trace\/hooks\/fs.h>/d' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch
+           patch -p1 < 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch || true
+           cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
+           patch -p1 -F 3 < syscall_hooks.patch
+           echo "完成"
 
       - name: Apply lz4kd Patches
         run: |
@@ -263,7 +256,7 @@ jobs:
       - name: Add sched_ext
         run: |
          cd kernel_workspace/kernel_platform/
-         git clone https://github.com/egcd123/sched_ext.git
+         git clone https://github.com/3620603660/sched_ext.git
          cp -r ./sched_ext/* ./common/kernel/sched
          rm -rf ./sched_ext/.git
          cd common/kernel/sched
@@ -336,7 +329,7 @@ jobs:
       - name: Prepare AnyKernel3 package
         run: |
           cd kernel_workspace/kernel_platform/dist
-          git clone https://github.com/egcd123/AnyKernel3.git AnyKernel3 --depth=1
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
           rm -rf AnyKernel3/.git
           rm -f AnyKernel3/push.sh
           cp Image AnyKernel3/
