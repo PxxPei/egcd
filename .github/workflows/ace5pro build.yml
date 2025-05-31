@@ -158,17 +158,13 @@ jobs:
            patch -p1 -F 3 < syscall_hooks.patch
            echo "完成"
 
+
       - name: Apply lz4kd Patches
         run: |
-         set -e
-         cd kernel_workspace/kernel_platform/common
-         PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_VERSION }}/lz4kd.patch
-         if [[ -f "$PATCH_FILE" ]]; then
-         cp "$PATCH_FILE" ./lz4kd.patch
-         patch -p1 -F 3 < lz4kd.patch || true
-         else
-         echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
-         fi
+          cd kernel_workspace/kernel_platform/common
+          cp ../../SukiSU_patch/other/lz4k_patch/${{ github.event.inputs.KERNEL_VERSION }}/lz4kd.patch ./
+          patch -p1 -F 3 < lz4kd.patch || true
+
 
       - name: Add SUSFS Configuration Settings
         run: |
