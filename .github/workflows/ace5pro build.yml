@@ -263,29 +263,35 @@ jobs:
          echo "KERNEL_TIME = $KERNEL_TIME"
          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
 
-         # 设置一些通用参数（便于后续维护）
-         export KCFLAGS='-Wno-error -O3'
+         # 设置基础构建参数（统一管理）
          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
          RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
          PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
-         LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} -O3"
-         echo "Using SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH"
+         LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} \
+         KCFLAGS='-O3 -Wno-error' \
+         KBUILD_CFLAGS='-O3' \
+         KBUILD_CFLAGS_KERNEL='-O3' \
+         KBUILD_CFLAGS_MODULE='-O3'"
 
-         # 进入源码目录
-         cd kernel_workspace/kernel_platform/common
+         echo "Using SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH"
 
          # 如果没有.config文件，则创建一个默认的配置文件
          if [ ! -f .config ]; then
            make defconfig
          fi
 
+         # 进入源码目录
+         cd kernel_workspace/kernel_platform/common
+
          # 执行 defconfig
          make -j$(nproc) $MAKE_ARGS gki_defconfig
 
-         # 编译全部目标
+         # 编译内核
          make -j$(nproc) $MAKE_ARGS all
-         echo "Verifying optimization level in compile command:"
-         grep -- '-O3' out/.config || echo "May need to check compiler flags manually."
+
+         # 检查优化等级
+         echo "Checking compiled optimization level:"
+         find out/ -name '*.cmd' | xargs grep -- '-O' | grep -v '\-O2' | grep '\-O3' | head
 
          # 创建输出目录并复制 Image
          mkdir -p ../dist
