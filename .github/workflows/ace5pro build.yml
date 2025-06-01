@@ -286,9 +286,7 @@ PATH"
          # 设置固定内核构建时间
          export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-         export SOURCE_DATE_EPOCH=
-$$(date -d "$$
-KERNEL_TIME" +%s)
+         export SOURCE_DATE_EPOCH=$$(date -d "$$KERNEL_TIME" +%s)
 
          # 打印验证
          echo "KERNEL_TIME = $KERNEL_TIME"
@@ -306,14 +304,10 @@ KERNEL_TIME" +%s)
          cd kernel_workspace/kernel_platform/common
 
          # 执行 defconfig
-         make -j
-$$(nproc) $$
-MAKE_ARGS gki_defconfig
+         make -j $$(nproc) $$ MAKE_ARGS gki_defconfig
 
          # 编译全部目标
-         make -j
-$$(nproc --all) $$
-MAKE_ARGS all
+         make -j $$(nproc --all)$$ MAKE_ARGS all
          # 创建输出目录并复制 Image
          mkdir -p ../dist
          cp out/arch/arm64/boot/Image ../dist/
