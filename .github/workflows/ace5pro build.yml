@@ -272,13 +272,7 @@ jobs:
       - name: Build Kernel
         run: |
          # 加入 clang 到 PATH
-         export PATH="
-$$
-{{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux
-  - x86/clang
-  - r510928/bin:
-$$
-PATH"
+         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
          # 加入 ccache 到 PATH
          export PATH="/usr/lib/ccache:$PATH"
          # 添加交叉编译器到 PATH
@@ -308,13 +302,9 @@ KERNEL_TIME" +%s)
            make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
          fi
          # 执行 gki_defconfig
-         make -j
-$$(nproc) $$
-MAKE_ARGS gki_defconfig
+         make -j$(nproc)$MAKE_ARGS gki_defconfig
          # 编译内核（使用 -O3 优化，关闭 warning->error）
-         make -j
-$$(nproc) $$
-MAKE_ARGS all
+         make -j$(nproc)$ MAKE_ARGS all
          echo "Checking compiled optimization level:"
          find out/ -name '*.cmd' | xargs grep -- '-O' | grep -v 'O2' | head
          echo "Checking if ThinLTO was applied:"
