@@ -278,11 +278,15 @@ jobs:
          make -j$(nproc) $MAKE_ARGS gki_defconfig
 
          # 编译全部目标
-         make -j$(nproc) $MAKE_ARGS all
+         make -j$(nproc --all) $MAKE_ARGS all
 
          # 创建输出目录并复制 Image
          mkdir -p ../dist
          cp out/arch/arm64/boot/Image ../dist/
+
+      # 6. 打印 ccache 使用统计
+      - name: Show ccache stats
+        run: ccache -s || true
 
       - name: 验证内核构建时间
         run: |
