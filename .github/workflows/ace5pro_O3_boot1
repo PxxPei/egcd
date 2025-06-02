@@ -10,43 +10,46 @@ on:
         options:
           - boot1
           - boot2
-
       CPU:
         description: "分支"
         required: true
         default: 'sm8750'
-
       FEIL:
         description: "配置文件"
         required: true
         default: 'oneplus_ace5_pro'
-
       CPUD:
         description: "处理器代号"
         required: true
         default: 'sun'
-
       ANDROID_VERSION:
         description: "内核安卓版本"
         required: true
         default: 'android15'
-
       KERNEL_VERSION:
         description: "内核版本"
         required: true
         default: '6.6'
-
       KERNEL_NAME:
-        description: "修改内核名称(不支持中文和表情)"
+        description: "修改内核名称"
         required: true
         default: '-android15-8-g013ec21bba94-abogki383916444'
+      local_version:
+        description: '输入内核后缀名（如-v8）'
+        required: false
+        default: '-4k'
+        type: string
+      remove_default_4k:
+        description: '是否删除默认的 -4k 后缀？（勾选则删除）'
+        required: false
+        default: false
+        type: boolean
 
       KPM:
         type: boolean
         description: "是否启用KPM"
         required: true
         default: false
-
 
 
 jobs:
@@ -208,7 +211,6 @@ jobs:
           cd common
           git add -A && git commit -a -m "BUILD Kernel"
 
-         
       - name: boot1
         run: |
             if [ "${{ github.event.inputs.boot }}" = "boot1" ]; then
@@ -219,8 +221,7 @@ jobs:
             patch -p1 -F 3 < hmbird_patch.patch
             echo "OGKI转换GKI patch完成"
             fi
-            
-        
+
       - name: boot2
         run: |
             if [ "${{ github.event.inputs.boot }}" = "boot2" ]; then
