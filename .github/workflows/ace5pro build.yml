@@ -119,38 +119,6 @@ jobs:
          rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
 
-
-- name: Apply HMBird GKI patch
-        run: |
-         cd kernel_workspace/kernel_platform/common/drivers
-         cat << 'EOF' > hmbird_patch.c
-         # ... hmbird_patch.c 的内容 ...
-         EOF
-         if ! grep -q "hmbird_patch.o" Makefile; then
-         echo "obj-y += hmbird_patch.o" >> Makefile
-         fi
-         cd ../../../
-         git add -A
-         git commit -m "Add HMBird GKI patch" || true
-
-      - name: Apply boot patches
-        run: |
-            if [ "${{ github.event.inputs.boot }}" = "boot1" ]; then
-            cd kernel_workspace/kernel_platform/common
-            sed -i '1iobj-y += hmbird_patch.o' drivers/Makefile
-            wget https://github.com/3620603660/patch/raw/main/hmbird_patch.patch
-            echo "正在打OGKI转换GKI补丁"
-            patch -p1 -F 3 < hmbird_patch.patch
-            echo "OGKI转换GKI patch完成"
-            elif [ "${{ github.event.inputs.boot }}" = "boot2" ]; then
-            cd kernel_workspace/kernel_platform/common
-            wget https://github.com/3620603660/patch/raw/main/property.patch
-            echo "正在打OGKI转换GKI补丁"
-            patch -p1 -F 3 < property.patch
-            echo "OGKI转换GKI patch完成"
-            fi
-
-
       - name: Set up SukiSU
         run: |
          cd kernel_workspace/kernel_platform
@@ -251,6 +219,23 @@ jobs:
          cd kernel_workspace/kernel_platform
          sed -i '186s|echo ".*"|echo "${KERNELVERSION}${scm_version}${config_localversion}"|' common/scripts/setlocalversion
          sed -i "s/\${scm_version}/${{ github.event.inputs.KERNEL_NAME }}/g" ./common/scripts/setlocalversion
+
+      - name: Apply boot patches
+        run: |
+            if [ "${{ github.event.inputs.boot }}" = "boot1" ]; then
+            cd kernel_workspace/kernel_platform/common
+            sed -i '1iobj-y += hmbird_patch.o' drivers/Makefile
+            wget https://github.com/3620603660/patch/raw/main/hmbird_patch.patch
+            echo "正在打OGKI转换GKI补丁"
+            patch -p1 -F 3 < hmbird_patch.patch
+            echo "OGKI转换GKI patch完成"
+            elif [ "${{ github.event.inputs.boot }}" = "boot2" ]; then
+            cd kernel_workspace/kernel_platform/common
+            wget https://github.com/3620603660/patch/raw/main/property.patch
+            echo "正在打OGKI转换GKI补丁"
+            patch -p1 -F 3 < property.patch
+            echo "OGKI转换GKI patch完成"
+            fi
          
       - name: 设置 CONFIG_LOCALVERSION
         run: |
