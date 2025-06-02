@@ -275,8 +275,6 @@ jobs:
          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
          # 加入 ccache 到 PATH
          export PATH="/usr/lib/ccache:$PATH"
-         # 添加交叉编译器到 PATH
-         export PATH="/usr/bin/aarch64-linux-gnu-gcc:$PATH"
          # 设置固定内核构建时间
          export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
