@@ -2,14 +2,6 @@ name: Ace5Pro Build SuKiSu SUSFS
 on:
   workflow_dispatch:
     inputs:
-      boot:
-        type: choice
-        description: "选择修补boot方法"
-        required: true
-        default: boot1
-        options:
-          - boot1
-          - boot2
       CPU:
         description: "分支"
         required: true
@@ -31,19 +23,9 @@ on:
         required: true
         default: '6.6'
       KERNEL_NAME:
-        description: "修改内核名称"
+        description: "修改内核名称(不支持中文和表情)"
         required: true
         default: '-android15-8-g013ec21bba94-abogki383916444'
-      local_version:
-        description: '输入内核后缀名（如-v8）'
-        required: false
-        default: '-4k'
-        type: string
-      remove_default_4k:
-        description: '是否删除默认的 -4k 后缀？（勾选则删除）'
-        required: false
-        default: false
-        type: boolean
 
       KPM:
         type: boolean
