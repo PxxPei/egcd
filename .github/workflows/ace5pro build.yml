@@ -220,12 +220,6 @@ jobs:
          cd kernel_workspace/kernel_platform
          sed -i '186s|echo ".*"|echo "${KERNELVERSION}${scm_version}${config_localversion}"|' common/scripts/setlocalversion
          sed -i "s/\${scm_version}/${{ github.event.inputs.KERNEL_NAME }}/g" ./common/scripts/setlocalversion
-         
-      - name: 设置 CONFIG_LOCALVERSION
-        run: |
-         cd kernel_workspace/kernel_platform
-         echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.local_version }}"' >> ./common/arch/arm64/configs/gki_defconfig
-
 
       - name: boot1
         run: |
@@ -248,6 +242,11 @@ jobs:
             echo "OGKI转换GKI patch完成"
             fi
 
+         
+      - name: 设置 CONFIG_LOCALVERSION
+        run: |
+         cd kernel_workspace/kernel_platform
+         echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.local_version }}"' >> ./common/arch/arm64/configs/gki_defconfig
 
       - name: Add sched_ext
         run: |
