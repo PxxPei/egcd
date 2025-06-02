@@ -2,7 +2,7 @@ name: ace5pro加入kpm可选(测试)
 on:
   workflow_dispatch:
     inputs:
-     boot:
+      boot:
         type: choice
         description: "选择修补boot方法"
         required: true
