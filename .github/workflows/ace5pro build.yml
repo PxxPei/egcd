@@ -80,7 +80,7 @@ jobs:
         run: |  
          sudo apt-get update  
          sudo apt-get install -y python3 git curl ccache libelf-dev
-         sudo apt-get install gcc-aarch64-linux-gnu
+         sudo apt-get install gcc-x86_64-linux-gnu
       # 3. 恢复 ccache 缓存  
       - name: Restore ccache
         uses: actions/cache@v3
