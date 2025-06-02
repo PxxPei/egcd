@@ -250,7 +250,6 @@ jobs:
         run: |
          cd kernel_workspace/kernel_platform
          echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.local_version }}"' >> ./common/arch/arm64/configs/gki_defconfig
-      - name: 删除 CONFIG_LOCALVERSION 中的 -4k 后缀（如果勾选）
 
       - name: boot1
         run: |
