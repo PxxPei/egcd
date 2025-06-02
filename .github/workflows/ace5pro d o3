@@ -1,4 +1,4 @@
-name: OnePlus ace5pro Build SuKiSu SUSFS
+name: OnePlus Ace5 Pro Build SuKiSu SUSFS
 on:
   workflow_dispatch:
     inputs:
