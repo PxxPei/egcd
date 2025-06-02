@@ -33,7 +33,6 @@ on:
         required: true
         default: false
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
