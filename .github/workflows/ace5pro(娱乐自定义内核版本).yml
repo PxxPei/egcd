@@ -48,6 +48,7 @@ jobs:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
+      TOKEN: ${{ secrets.TOKEN }}
     steps:
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
@@ -58,12 +59,11 @@ jobs:
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
-
+          
       - name: Configure Git
         run: |
          git config --global user.name "build"
          git config --global user.email "3620603668@qq.com"
-
       # 1. 拉取仓库  
       - name: Checkout  
         uses: actions/checkout@v4  
@@ -78,11 +78,11 @@ jobs:
         uses: actions/cache@v3
         with:
          path: /home/runner/.ccache
-         key: ${{ runner.os }}-${{ github.repository }}-v3
+         key: ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-v3
          restore-keys: |
+          ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-
           ${{ runner.os }}-${{ github.repository }}-
           ${{ runner.os }}-
-          ccache-
       # 4. 设置 ccache 环境变量  
       - name: Setup ccache environment  
         run: |  
@@ -93,26 +93,24 @@ jobs:
          echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV  
          echo "CCACHE_BASEDIR=${{ github.workspace }}" >> $GITHUB_ENV  
          echo "CCACHE_LOGFILE=${{ github.workspace }}/ccache.log" >> $GITHUB_ENV  
-         echo "/usr/lib/ccache" >> $GITHUB_PATH
-
+         echo "/usr/lib/ccache" >> $GITHUB_PATH  
+         
       - name: Show ccache stats
         run: |
          ccache -s || true
-
       - name: Install repo tool
         run: |
          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
          chmod a+x ~/repo
          sudo mv ~/repo /usr/local/bin/repo
-
       - name: Initialize repo and sync
         run: |
          mkdir kernel_workspace && cd kernel_workspace
-         repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
+         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
          repo --trace sync -c -j$(nproc --all) --no-tags
          rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
-
+         
       - name: Set up SukiSU
         run: |
          cd kernel_workspace/kernel_platform
