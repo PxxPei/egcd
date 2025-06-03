@@ -81,7 +81,8 @@ jobs:
       - name: Install Dependencies
         run: |
          sudo apt-get update
-         sudo apt-get install -y python3 git curl ccache libelf-dev gcc-11 g++-11 clang-10
+         sudo apt-get update
+sudo apt-get install -y python3 git curl ccache build-essential libelf-dev
 
       # 2. 恢复 ccache 缓存（按分支区分）
       - name: Restore ccache
