@@ -82,6 +82,8 @@ jobs:
         run: |
          sudo apt-get update
          sudo apt-get install -y python3 git curl ccache libelf-dev
+         sudo apt-get update
+         sudo apt-get install -y gcc-11 g++-11 clang-10
 
       # 2. 恢复 ccache 缓存（按分支区分）
       - name: Restore ccache
@@ -273,10 +275,13 @@ jobs:
          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
 
          # 设置一些通用参数（便于后续维护）
-         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
+         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang-10 CXX=clang++-10 \
          RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
          PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
          LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS=-Wno-error \
+         CLANG_TRIPLE=aarch64-linux-gnu- \
+         LLVM_IAS=1 \
+         LLVM_IAS_ARGS='-fuse-ld=lld --plugin-opt=thinlto' \
          SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
          echo "Using SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH"
 
