@@ -254,8 +254,7 @@ jobs:
          # 设置固定内核构建时间
          export KERNEL_TIME="2024-12-17 23:36:49 UTC"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-         export SOURCE_DATE_EPOCH=$(date -d "$$
-KERNEL_TIME" +%s)
+         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
 
          # 打印验证
          echo "KERNEL_TIME = $KERNEL_TIME"
