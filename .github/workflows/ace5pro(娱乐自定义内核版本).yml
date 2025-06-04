@@ -44,7 +44,7 @@ on:
         required: false
         default: 'Tue Dec 17 23:36:49 UTC 2024'
         type: string
-      ENABLE_LTO:Add comment更多操作
+      ENABLE_LTO:
         description: '启用 LTO'
         required: true
         default: 'true'
