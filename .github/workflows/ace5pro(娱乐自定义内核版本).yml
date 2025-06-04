@@ -83,9 +83,7 @@ jobs:
         uses: actions/cache@v3
         with:
          path: /home/runner/.ccache
-         key: ccache-
-$${{ runner.os }}-$$
-{{ github.ref }}
+         key: ccache-${{ runner.os }}-${{ github.ref }}
          restore-keys: |
           ccache-${{ runner.os }}-
 
@@ -111,9 +109,7 @@ $${{ runner.os }}-$$
       - name: Initialize repo and sync
         run: |
          mkdir kernel_workspace && cd kernel_workspace
-         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/
-$${{ github.event.inputs.CPU }} -m $$
-{{ github.event.inputs.FEIL }}.xml --depth=1
+         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
          repo --trace sync -c -j$(nproc --all) --no-tags
          rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
@@ -123,26 +119,19 @@ $${{ github.event.inputs.CPU }} -m $$
          cd kernel_workspace/kernel_platform
          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-dev
          cd ./KernelSU
-         KSU_VERSION=
-$$(expr $$
-(/usr/bin/git rev-list --count main) "+" 10606)
-         echo "KSUVER=
-$$KSU_VERSION" >> $$
-GITHUB_ENV
+         KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10606)
+         echo "KSUVER=$KSU_VERSION" >> $ GITHUB_ENV
          export KSU_VERSION=$KSU_VERSION
          sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
 
       - name: Set up susfs
         run: |
            cd kernel_workspace
-           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-
-$${{ github.event.inputs.ANDROID_VERSION }}-$$
+           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ github.event.inputs.ANDROID_VERSION }}-$$
 {{ github.event.inputs.KERNEL_VERSION }}
            git clone https://github.com/ExmikoN/SukiSU_patch.git
            cd kernel_platform        
-           cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-
-$${{ github.event.inputs.ANDROID_VERSION }}-$$
-{{ github.event.inputs.KERNEL_VERSION }}.patch ./common/
+           cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch ./common/
            cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
            cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
            #lz4k
@@ -157,8 +146,7 @@ $${{ github.event.inputs.ANDROID_VERSION }}-$$
            sed -i '/#include <trace\/hooks\/fs.h>/d' 50_add_susfs_in_gki-
 $${{ github.event.inputs.ANDROID_VERSION }}-$$
 {{ github.event.inputs.KERNEL_VERSION }}.patch
-           patch -p1 < 50_add_susfs_in_gki-
-$${{ github.event.inputs.ANDROID_VERSION }}-$$
+           patch -p1 < 50_add_susfs_in_gki- ${{ github.event.inputs.ANDROID_VERSION }}-$
 {{ github.event.inputs.KERNEL_VERSION }}.patch || true
            cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
            patch -p1 -F 3 < syscall_hooks.patch
@@ -221,12 +209,9 @@ $${{ github.event.inputs.ANDROID_VERSION }}-$$
       - name: Add make name
         run: |
          cd kernel_workspace/kernel_platform
-         sed -i '186s|echo ".*"|echo "
-$${KERNELVERSION}$$
+         sed -i '186s|echo ".*"|echo "${KERNELVERSION}$
 {scm_version}${config_localversion}"|' common/scripts/setlocalversion
-         sed -i "s/\
-$${scm_version}/$$
-{{ github.event.inputs.KERNEL_NAME }}/g" ./common/scripts/setlocalversion
+         sed -i "s/\${scm_version}/${{ github.event.inputs.KERNEL_NAME }}/g" ./common/scripts/setlocalversion
 
       - name: 设置 CONFIG_LOCALVERSION
         run: |
@@ -266,8 +251,7 @@ $${scm_version}/$$
       - name: Set build timestamp
         run: |
          export SOURCE_DATE_EPOCH=$(date -d "2024-12-17 23:36:49 UTC" +%s)
-         echo "SOURCE_DATE_EPOCH=
-$$SOURCE_DATE_EPOCH" >> $$
+         echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $$
 GITHUB_ENV
 
       - name: Build Kernel
@@ -278,8 +262,7 @@ GITHUB_ENV
          # 设置固定内核构建时间
          export KERNEL_TIME="2024-12-17 23:36:49 UTC"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-         export SOURCE_DATE_EPOCH=
-$$(date -d "$$
+         export SOURCE_DATE_EPOCH=$(date -d "$$
 KERNEL_TIME" +%s)
 
          # 打印验证
@@ -298,14 +281,10 @@ KERNEL_TIME" +%s)
          cd kernel_workspace/kernel_platform/common
 
          # 执行 defconfig
-         make -j
-$$(nproc) $$
-MAKE_ARGS gki_defconfig
+         make -j $(nproc) $MAKE_ARGS gki_defconfig
 
          # 编译全部目标
-         make -j
-$$(nproc) $$
-MAKE_ARGS all
+         make -j$(nproc) $MAKE_ARGS all
          echo "Checking if ThinLTO was applied:"
          find out/ -name '*.cmd' | xargs grep -E '\-flto(=thin)?' | head
 
@@ -336,16 +315,12 @@ MAKE_ARGS all
       - name: Upload AnyKernel3
         uses: actions/upload-artifact@v4
         with:
-         name: SuKiSu_
-$${{ env.KSUVER }}_$$
-{{ github.event.inputs.FEIL }}
+         name: SuKiSu_${{ env.KSUVER }}_${{ github.event.inputs.FEIL }}
          path: ./AnyKernel3/*
 
       - name: Upload Image
         uses: actions/upload-artifact@v4
         with:
-         name: Image_SuKiSu_
-$${{ env.KSUVER }}_$$
-{{ github.event.inputs.FEIL }}
+         name: Image_SuKiSu_${{ env.KSUVER }}_${{ github.event.inputs.FEIL }}
          path: kernel_workspace/kernel_platform/dist/Image
  
