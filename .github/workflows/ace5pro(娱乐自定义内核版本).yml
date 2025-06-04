@@ -203,8 +203,7 @@ jobs:
       - name: Add make name
         run: |
          cd kernel_workspace/kernel_platform
-         sed -i '186s|echo ".*"|echo "${KERNELVERSION}$
-{scm_version}${config_localversion}"|' common/scripts/setlocalversion
+         sed -i '186s|echo ".*"|echo "${KERNELVERSION}${scm_version}${config_localversion}"|' common/scripts/setlocalversion
          sed -i "s/\${scm_version}/${{ github.event.inputs.KERNEL_NAME }}/g" ./common/scripts/setlocalversion
 
       - name: 设置 CONFIG_LOCALVERSION
@@ -245,8 +244,7 @@ jobs:
       - name: Set build timestamp
         run: |
          export SOURCE_DATE_EPOCH=$(date -d "2024-12-17 23:36:49 UTC" +%s)
-         echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $$
-GITHUB_ENV
+         echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
 
       - name: Build Kernel
         run: |
