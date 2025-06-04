@@ -241,9 +241,6 @@ jobs:
          echo "KERNEL_TIME = $KERNEL_TIME"
          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
 
-         # 进入源码目录
-         cd kernel_workspace/kernel_platform/common
-
          # 编译全部目标
          cd kernel_workspace/kernel_platform
          tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
