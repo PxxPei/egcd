@@ -228,8 +228,6 @@ jobs:
       - name: Build kernel
         run: |
          cd kernel_workspace/kernel_platform
-         echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.local_version }}"' >> ./common/arch/arm64/configs/gki_defconfig
-         cd kernel_workspace/kernel_platform
          tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
          # 创建输出目录并复制 Image
          mkdir -p ../dist
