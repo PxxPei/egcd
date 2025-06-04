@@ -225,11 +225,10 @@ jobs:
          export SOURCE_DATE_EPOCH=$(date -d "2024-12-17 23:36:49 UTC" +%s)
          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
          
-- name: 构建内核
+- name: Build kernel
   run: |
     # 添加 clang 到 PATH
-    export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
-    
+    export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"    
     # 添加 ccache 到 PATH
     export PATH="/usr/lib/ccache:$PATH"
 
