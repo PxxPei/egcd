@@ -26,7 +26,7 @@ on:
         description: "修改内核名称"
         required: true
         default: '-android15-8-g013ec21bba94-abogki383916444-4k'
-        ENABLE_KPM:
+      ENABLE_KPM:
         description: "启用kpm"
         required: false
         default: false
