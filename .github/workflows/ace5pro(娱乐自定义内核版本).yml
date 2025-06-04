@@ -225,30 +225,33 @@ jobs:
          export SOURCE_DATE_EPOCH=$(date -d "2024-12-17 23:36:49 UTC" +%s)
          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
          
-      - name: Build kernel
-        run: |
-         # 加入 clang 到 PATH
-         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
-         # 加入 ccache 到 PATH
-         export PATH="/usr/lib/ccache:$PATH" 
+- name: 构建内核
+  run: |
+    # 添加 clang 到 PATH
+    export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+    
+    # 添加 ccache 到 PATH
+    export PATH="/usr/lib/ccache:$PATH"
 
-         # 设置固定内核构建时间
-         export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
-         export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
+    # 设置固定的内核构建时间
+    export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
+    export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
+    export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
 
-         # 打印验证
-         echo "KERNEL_TIME = $KERNEL_TIME"
-         echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+    # 打印验证信息
+    echo "KERNEL_TIME = $KERNEL_TIME"
+    echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
 
-         # 编译全部目标
-         cd kernel_workspace/kernel_platform
-         tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
+    # 切换到内核工作目录
+    cd "${{ github.workspace }}/kernel_workspace/kernel_platform" || exit
 
-         # 创建输出目录并复制 Image
-         mkdir -p ../dist
-         cp out/arch/arm64/boot/Image ../dist/
-   
+    # 编译所有目标
+    tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
+
+    # 确保输出目录存在并复制 Image 文件
+    mkdir -p "${{ github.workspace }}/kernel_workspace/dist"
+    cp out/arch/arm64/boot/Image "${{ github.workspace }}/kernel_workspace/dist/"
+
       - name: Prepare AnyKernel3 Packages
         run: |
          cd kernel_workspace/kernel_platform/dist
