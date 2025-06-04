@@ -2,14 +2,6 @@ name: Ace5 por Build SuKiSu SUSFS
 on:
   workflow_dispatch:
     inputs:
-      boot:
-        type: choice
-        description: "选择修补boot方法"
-        required: true
-        default: boot1
-        options:
-          - boot1
-          - boot2
       CPU:
         description: "分支"
         required: true
@@ -237,30 +229,7 @@ jobs:
         run: |
          cd kernel_workspace/kernel_platform
          echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.local_version }}"' >> ./common/arch/arm64/configs/gki_defconfig
-
-
-      - name: boot1
-        run: |
-            if [ "${{ github.event.inputs.boot }}" = "boot1" ]; then
-            cd kernel_workspace/kernel_platform/common
-            sed -i '1iobj-y += hmbird_patch.o' drivers/Makefile
-            wget https://github.com/3620603660/patch/raw/main/hmbird_patch.patch
-            echo "正在打OGKI转换GKI补丁"
-            patch -p1 -F 3 < hmbird_patch.patch
-            echo "OGKI转换GKI patch完成"
-            fi
-            
-        
-      - name: boot2
-        run: |
-            if [ "${{ github.event.inputs.boot }}" = "boot2" ]; then
-            cd kernel_workspace/kernel_platform/common
-            wget https://github.com/3620603660/patch/raw/main/property.patch
-            echo "正在打OGKI转换GKI补丁"
-            patch -p1 -F 3 < property.patch
-            echo "OGKI转换GKI patch完成"
-            fi
-                   
+             
       - name: Add sched_ext
         run: |
          cd kernel_workspace/kernel_platform/
