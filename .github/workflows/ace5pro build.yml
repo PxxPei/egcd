@@ -69,7 +69,7 @@ jobs:
       - name: Configure Git
         run: |
          git config --global user.name "build"
-         git config --global user.email "2106456897@qq.com"
+         git config --global user.email "3620603668@qq.com"
       # 1. 拉取仓库  
       - name: Checkout  
         uses: actions/checkout@v4  
@@ -84,11 +84,11 @@ jobs:
         uses: actions/cache@v3
         with:
          path: /home/runner/.ccache
-         key: ${{ runner.os }}-${{ github.repository }}-v2
+         key: ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-v3
          restore-keys: |
+          ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-
           ${{ runner.os }}-${{ github.repository }}-
           ${{ runner.os }}-
-          ccache-
       # 4. 设置 ccache 环境变量  
       - name: Setup ccache environment  
         run: |  
@@ -132,7 +132,7 @@ jobs:
          cd kernel_workspace
          git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}
          git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
-         git clone https://$TOKEN@github.com/egcd521/111.git
+         git clone https://$TOKEN@github.com/3620603660/boot.git
          cd kernel_platform
          cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch ./common/ || true
          mkdir -p ./common/fs ./common/include/linux ./common/lib ./common/crypto
@@ -142,7 +142,7 @@ jobs:
          cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib || true
          cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto || true
          cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/ || true
-         cp ../111/boot.patch ./common/
+         cp ../boot/1.patch ./common/
          cd ./common
          PATCH_FILE=50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch
          if [[ -f "$PATCH_FILE" ]]; then
@@ -152,7 +152,7 @@ jobs:
          fi
          cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
          patch -p1 -F 3 < syscall_hooks.patch || true
-         patch -s -p1 -F 3 < boot.patch
+         patch -s -p1 -F 3 < 1.patch
          echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
       - name: Apply lz4kd Patches
         run: |
@@ -239,7 +239,7 @@ jobs:
       - name: Add sched_ext
         run: |
          cd kernel_workspace/kernel_platform/
-         git clone https://github.com/egcd123/sched_ext.git
+         git clone https://github.com/3620603660/sched_ext.git
          cp -r ./sched_ext/* ./common/kernel/sched
          rm -rf ./sched_ext/.git
          
@@ -303,7 +303,7 @@ jobs:
       - name: Prepare AnyKernel3 package
         run: |
           cd kernel_workspace/kernel_platform/dist
-          git clone https://github.com/egcd123/AnyKernel3.git AnyKernel3 --depth=1
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
           rm -rf AnyKernel3/.git
           rm -f AnyKernel3/push.sh
           cp Image AnyKernel3/
