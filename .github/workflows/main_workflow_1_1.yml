@@ -26,7 +26,7 @@ on:
         type: boolean
       local_version:
         type: string
-      remove_default_4k:
+      local_version:
         description: '输入内核后缀名（如-v8）'
         required: false
         default: '-4k'
