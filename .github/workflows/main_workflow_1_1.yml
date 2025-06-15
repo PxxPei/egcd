@@ -27,7 +27,10 @@ on:
       local_version:
         type: string
       remove_default_4k:
-        type: boolean
+        description: '输入内核后缀名（如-v8）'
+        required: false
+        default: '-4k'
+        type: string
 
       ENABLE_LTO:
         type: boolean
