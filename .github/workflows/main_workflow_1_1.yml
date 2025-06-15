@@ -31,14 +31,14 @@ on:
         required: false
         default: '-4k'
         type: string
-
-      ENABLE_LTO:
-        type: boolean
       OPTIMIZATION_PROFILE:
         description: '选择优化配置文件：default, performance, battery_save, custom'
         required: false
         default: 'default'
         type: string
+      ENABLE_LTO:
+        type: boolean
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -158,8 +158,61 @@ jobs:
          echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
          fi
 
-          
-
+      - name: Apply Optimization Profile
+        run: |
+          cd kernel_workspace/kernel_platform
+          case "${{ github.event.inputs.OPTIMIZATION_PROFILE }}" in
+            performance)
+              echo "CONFIG_EEVDF_CUSTOM_PARAMS=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_EEVDF_LATENCY_NICE_LEVEL=0" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_CPU_FREQ_GOV_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZSWAP_COMPRESSOR_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_MQ_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_BFQ_GROUP_IOSCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_WRITEBACK_CENTRIC_FS=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_GPU_OPTIMIZATION_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_NPU_TASK_OFFLOAD=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_COMPILER_OPTIMIZATION_FLAGS=\"-O3 -march=armv8.2-a+sve -mtune=cortex-a76\"" >> ./common/arch/arm64/configs/gki_defconfig
+              ;;
+            battery_save)
+              echo "CONFIG_CPU_FREQ_GOV_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_CPU_FREQ_DEFAULT_GOV_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_CPU_IDLE_GOV_LADDER=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZSWAP_COMPRESSOR_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_IO_SCHED_NOOP=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_FILESYSTEM_CACHE_LAZYWRITE=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_GPU_OPTIMIZATION_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_COMPILER_OPTIMIZATION_FLAGS=\"-Os\"" >> ./common/arch/arm64/configs/gki_defconfig
+              ;;
+            custom)
+              # Custom settings, can be expanded later
+              ;;
+            *)
+              # Default settings
+              echo "CONFIG_EEVDF_CUSTOM_PARAMS=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_EEVDF_LATENCY_NICE_LEVEL=0" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_ZSWAP_COMPRESSOR_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_MQ_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_BFQ_GROUP_IOSCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_WRITEBACK_CENTRIC_FS=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_GPU_OPTIMIZATION_BALANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_COMPILER_OPTIMIZATION_FLAGS=\"-O2\"" >> ./common/arch/arm64/configs/gki_defconfig
+              ;;
+          esac
+          cd common
+          git add -A && git commit -a -m "Apply optimization profile"
 
       - name: 启用kpm
         if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }}
@@ -274,68 +327,5 @@ jobs:
           name: AnyKernel3_${{ github.event.inputs.FEIL }}_${{ env.KSUVER }}
           path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
 
-
-
-
-
-
-
-
-
-      - name: Apply Optimization Profile
-        run: |
-          cd kernel_workspace/kernel_platform
-          case "${{ github.event.inputs.OPTIMIZATION_PROFILE }}" in
-            performance)
-              echo "CONFIG_EEVDF_CUSTOM_PARAMS=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_EEVDF_LATENCY_NICE_LEVEL=0" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_CPU_FREQ_GOV_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZSWAP_COMPRESSOR_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_MQ_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_BFQ_GROUP_IOSCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_WRITEBACK_CENTRIC_FS=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_GPU_OPTIMIZATION_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_NPU_TASK_OFFLOAD=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_COMPILER_OPTIMIZATION_FLAGS=\"-O3 -march=armv8.2-a+sve -mtune=cortex-a76\"" >> ./common/arch/arm64/configs/gki_defconfig
-              ;;
-            battery_save)
-              echo "CONFIG_CPU_FREQ_GOV_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_CPU_FREQ_DEFAULT_GOV_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_CPU_IDLE_GOV_LADDER=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZSWAP_COMPRESSOR_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_IO_SCHED_NOOP=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_FILESYSTEM_CACHE_LAZYWRITE=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_GPU_OPTIMIZATION_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_COMPILER_OPTIMIZATION_FLAGS=\"-Os\"" >> ./common/arch/arm64/configs/gki_defconfig
-              ;;
-            custom)
-              # Custom settings, can be expanded later
-              ;;
-            *)
-              # Default settings
-              echo "CONFIG_EEVDF_CUSTOM_PARAMS=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_EEVDF_LATENCY_NICE_LEVEL=0" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_ZSWAP_COMPRESSOR_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_MQ_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_BFQ_GROUP_IOSCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_WRITEBACK_CENTRIC_FS=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_GPU_OPTIMIZATION_BALANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_COMPILER_OPTIMIZATION_FLAGS=\"-O2\"" >> ./common/arch/arm64/configs/gki_defconfig
-              ;;
-          esac
-          cd common
-          git add -A && git commit -a -m "Apply optimization profile"
 
 
