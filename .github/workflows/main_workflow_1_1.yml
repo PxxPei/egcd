@@ -26,11 +26,8 @@ on:
         type: boolean
       local_version:
         type: string
-      local_version:
-        description: '输入内核后缀名（如-v8）'
-        required: false
-        default: '-4k'
-        type: string
+      remove_default_4k:
+        type: boolean
       OPTIMIZATION_PROFILE:
         description: '选择优化配置文件：default, performance, battery_save, custom'
         required: false
