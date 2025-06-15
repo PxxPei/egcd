@@ -22,34 +22,7 @@ on:
         description: "修改内核名称"
         required: true
         default: '-android15-8-g013ec21bba94-abogki383916444'
-      ENABLE_KPM:
-        type: boolean
-      local_version:
-        type: string
-      remove_default_4k:
-        type: boolean
-      kernel_time:
-        type: string
-      ENABLE_LTO:
-        type: boolean
-      EEVDF_LATENCY_NICE_LEVEL:
-        type: string
-      DVFS_GOVERNOR:
-        type: string
-      CPU_IDLE_GOVERNOR:
-        type: string
-      ZRAM_ZSWAP_ALGORITHM:
-        type: string
-      IO_SCHEDULER:
-        type: string
-      FILESYSTEM_CACHE_POLICY:
-        type: string
-      GPU_OPTIMIZATION_LEVEL:
-        type: string
-      NPU_TASK_OFFLOAD:
-        type: boolean
-      COMPILER_OPTIMIZATION_FLAGS:
-        type: string
+
 jobs:
   build:
     runs-on: ubuntu-latest
