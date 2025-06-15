@@ -1,4 +1,4 @@
-name: ace5pro加入kpm可选(主工作流)
+name: Ace5Pro Build SuKiSu SUSFS
 on:
   workflow_dispatch:
     inputs:
