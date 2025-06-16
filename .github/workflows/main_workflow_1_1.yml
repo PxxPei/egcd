@@ -86,11 +86,9 @@ jobs:
         uses: actions/cache@v3
         with:
          path: /home/runner/.ccache
-         key: ${{ runner.os }}-${{ github.repository }}-v2
+         key: ccache-${{ runner.os }}-${{ github.ref }}
          restore-keys: |
-          ${{ runner.os }}-${{ github.repository }}-
-          ${{ runner.os }}-
-          ccache-
+          ccache-${{ runner.os }}-
 
       # 4. 设置 ccache 环境变量  
       - name: Setup ccache environment  
