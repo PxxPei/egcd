@@ -293,7 +293,11 @@ jobs:
          make -j$(nproc) $MAKE_ARGS gki_defconfig
 
          # 编译全部目标
-         make -j$(nproc) $MAKE_ARGS all
+         KBUILD_CFLAGS='-O2' KCFLAGS='-Wno-error' make -j$(nproc) $MAKE_ARGS all
+         echo "Checking compiled optimization level:"
+         find out/ -name '*.cmd' | xargs grep -- '-O' | grep -v 'O2' | head
+         echo "Checking if ThinLTO was applied:"
+         find out/ -name '*.cmd' | xargs grep -E '\-flto(=thin)?' | head
 
          # 创建输出目录并复制 Image
          mkdir -p ../dist
