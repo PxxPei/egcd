@@ -239,7 +239,7 @@ jobs:
           cd "${{ github.workspace }}/kernel_workspace/kernel_platform" || exit
 
           # 编译所有目标
-          tools/bazel run --config=fast --config=stamp --lto=thin --copt=-O2 //common:kernel_aarch64_dist -- --dist_dir=dist
+          tools/bazel run --config=fast --config=stamp --lto=thin --copt=-Os //common:kernel_aarch64_dist -- --dist_dir=dist
 
       - name: Prepare AnyKernel3 Packages
         run: |
