@@ -222,12 +222,17 @@ jobs:
 
       - name: Download AutoFDO Profile (示例，实际中需要替换为您的profile下载或生成逻辑)
         run: |
-          cd kernel_workspace/kernel_platform/
+          # cd kernel_workspace/kernel_platform/
           # 假设您的profile文件名为 kernel.profdata，并存储在某个可访问的URL
-          # curl -L -o kernel.profdata <YOUR_PROFILE_FILE_URL>
+          curl -L -o kernel.profdata <https://github.com/3620603660/egcd/blob/main/kernel_platform>
           # 或者，如果profile是在本地生成的，确保它在正确的位置
           # cp /path/to/your/kernel.profdata .
           echo "请确保 kernel.profdata 文件已存在于 kernel_workspace/kernel_platform/ 目录下，或在此处添加下载/生成逻辑。"
+
+      - name: Build with Bazel
+        run: |
+          # 确保已经安装了 Bazel
+          bazel build //:generate_kernel_profdata
 
       - name: Build kernel
         run: |
