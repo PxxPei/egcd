@@ -150,7 +150,7 @@ jobs:
           # 启用 ThinLTO 支持
           echo "CONFIG_LTO_CLANG=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_LTO_CLANG_THIN=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # 添加 O3 优化配置
+          # 添加 O2 优化配置
           echo "CONFIG_OPTIMIZE_FOR_SIZE=n" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
           # 添加省电与网络优化配置
@@ -239,7 +239,7 @@ jobs:
           cd "${{ github.workspace }}/kernel_workspace/kernel_platform" || exit
 
           # 编译所有目标
-          tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
+          tools/bazel run --config=fast --config=stamp --lto=thin --copt=-O2 //common:kernel_aarch64_dist -- --dist_dir=dist
 
       - name: Prepare AnyKernel3 Packages
         run: |
