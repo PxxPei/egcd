@@ -64,7 +64,7 @@ jobs:
       - name: Configure Git
         run: |
          git config --global user.name "build"
-         git config --global user.email "2106456897@qq.com"
+         git config --global user.email "3620603668@qq.com"
 
       # 1. 拉取仓库  
       - name: Checkout  
@@ -133,7 +133,7 @@ jobs:
          cd kernel_workspace
          git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}
          git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
-         git clone --depth=1 https://github.com/egcd123/boot.git
+         git clone --depth=1 https://github.com/3620603660/boot.git
          git clone https://github.com/WildPlusKernel/kernel_patches.git
          cd kernel_platform
          cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch ./common/
@@ -252,7 +252,7 @@ jobs:
       - name: 拉取并集成 sched_ext 调度器
         run: |
          cd kernel_workspace/kernel_platform/
-         git clone https://github.com/egcd123/sched_ext.git
+         git clone https://github.com/3620603660/sched_ext.git
          cp -r ./sched_ext/* ./common/kernel/sched
          rm -rf ./sched_ext/.git
             
@@ -305,7 +305,7 @@ jobs:
       - name: Prepare AnyKernel3 package
         run: |
           cd kernel_workspace/kernel_platform/dist
-          git clone https://github.com/egcd123/AnyKernel3.git AnyKernel3 --depth=1
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
           rm -rf AnyKernel3/.git
           rm -f AnyKernel3/push.sh
           cp Image AnyKernel3/
