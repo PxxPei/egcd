@@ -250,8 +250,8 @@ jobs:
 
           # 编译所有目标，并使用AutoFDO profile
           # 注意：这里的 --lto=thin 已经存在，AutoFDO通常与LTO结合使用
-          tools/bazel run --config=fast --config=stamp --lto=thin \\
-            --copt="-fprofile-use=kernel.profdata" \\
+          tools/bazel run --config=fast --config=stamp --lto=thin //
+            --copt="-fprofile-use=kernel.profdata" //
             //common:kernel_aarch64_dist -- --dist_dir=dist
 
       - name: Prepare AnyKernel3 Packages
