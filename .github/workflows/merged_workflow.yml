@@ -1,9 +1,4 @@
-# ace5pro 主工作流 (AFDO 优化版)
-# 这是一个 GitHub Actions 工作流，用于编译 Android 内核，并集成了 AutoFDO 优化。
-# 它定义了触发条件、输入参数以及一系列构建步骤。
-
 name: ace5pro-afdo-build
-
 # 定义工作流的触发条件
 on:
   # 当手动触发工作流时
@@ -30,11 +25,6 @@ on:
         description: "修改后的内核名称后缀"
         required: true
         default: '-android15-8-g013ec21bba94-abogki383916444'
-      ENABLE_KPM:
-        description: "是否启用 KPM (Kernel Patch Manager)"
-        required: false
-        default: false
-        type: boolean
       local_version:
         description: '输入内核后缀名（如-v8）'
         required: false
@@ -63,11 +53,7 @@ jobs:
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
       TOKEN: ${{ secrets.TOKEN }}
-
     steps:
-
-
-
       # 步骤：最大化构建空间
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
