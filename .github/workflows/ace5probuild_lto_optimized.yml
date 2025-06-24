@@ -99,9 +99,9 @@ jobs:
         uses: actions/cache@v4 # 使用 actions/cache@v3 动作恢复 ccache 缓存
         with:
          path: /home/runner/.ccache # ccache 缓存路径
-         key: ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-v3 # 缓存键
+         key: ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-v4 # 缓存键
          restore-keys: | # 恢复键列表
-          ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-v3
+          ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-v4
           ${{ runner.os }}-${{ github.repository }}-
           ${{ runner.os }}-
       # 4. 设置 ccache 环境变量  
