@@ -240,7 +240,6 @@ jobs:
           echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4KD 压缩
           echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM ZSTD 压缩
           echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM 多压缩器支持
-          echo "CONFIG_ZRAM_SIZE=16G" >> ./common/arch/arm64/configs/gki_defconfig # 设置 ZRAM 大小为 16GB
 
           # 添加 BBR 和通用 Linux 优化设置
           echo "CONFIG_HZ_250=y" >> ./common/arch/arm64/configs/gki_defconfig # 设置时钟频率为 250Hz
@@ -399,4 +398,3 @@ jobs:
         with:
           name: AnyKernel3_${{ github.event.inputs.FEIL }}_${{ env.KSUVER }} # Artifact 名称
           path: kernel_workspace/kernel_platform/dist/AnyKernel3/* # Artifact 路径
-
