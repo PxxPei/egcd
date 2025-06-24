@@ -266,96 +266,103 @@ jobs:
          cd kernel_workspace/kernel_platform/common
          mkdir -p out # 在当前目录（common）下创建 'out' 目录
 
-         # 执行 defconfig。注意：gki_defconfig 通常会将 .config 写入当前目录，而不是 O=out 指定的目录
-      make -j$(nproc) gki_defconfig
+          # 执行 defconfig。注意：gki_defconfig 通常会将 .config 写入当前目录，而不是 O=out 指定的目录
+         make -j$(nproc) gki_defconfig
 
-      # --- 开始清理和添加配置到生成的 .config 文件 ---
-      # 解决重复定义警告：先删除旧的配置，再添加新的
-      # 删除 gki_defconfig 中可能重复的配置项，以避免 override 警告和潜在冲突
-      sed -i '/CONFIG_CRYPTO_ZSTD/d' .config
-      sed -i '/CONFIG_CRYPTO_LZ4/d' .config
-      sed -i '/CONFIG_ZRAM/d' .config
-      sed -i '/CONFIG_NET_SCHED/d' .config
-      sed -i '/CONFIG_NET_SCH_FQ/d' .config
-      sed -i '/CONFIG_F2FS_FS/d' .config
-      sed -i '/CONFIG_F2FS_FS_SECURITY/d' .config
-      sed -i '/CONFIG_F2FS_FS_COMPRESSION/d' .config
-      sed -i '/CONFIG_LOCALVERSION/d' .config
+         # --- 开始清理和添加配置到生成的 .config 文件 ---
+         # 解决重复定义警告：先删除旧的配置，再添加新的
+         # 删除 gki_defconfig 中可能重复的配置项，以避免 override 警告和潜在冲突
+         # 【新增】以下 sed 命令，用于清理 make gki_defconfig 生成的 .config 文件中的重复项
+         sed -i '/CONFIG_CRYPTO_ZSTD/d' .config
+         sed -i '/CONFIG_CRYPTO_LZ4/d' .config
+         sed -i '/CONFIG_ZRAM/d' .config
+         sed -i '/CONFIG_NET_SCHED/d' .config
+         sed -i '/CONFIG_NET_SCH_FQ/d' .config
+         sed -i '/CONFIG_F2FS_FS/d' .config
+         sed -i '/CONFIG_F2FS_FS_SECURITY/d' .config
+         sed -i '/CONFIG_F2FS_FS_COMPRESSION/d' .config
+         sed -i '/CONFIG_LOCALVERSION/d' .config
 
-      # 将生成的 .config 文件移动到 out 目录
-      mv .config out/.config
+         # 【修改】将生成的 .config 文件移动到 out 目录
+         # 原先：sed -i '/CONFIG_F2FS_FS_COMPRESSION/d' out/.config
+         #       sed -i '/CONFIG_LOCALVERSION/d' out/.config
+         # 现改为：
+         mv .config out/.config
 
-      # 添加 SUSFS 和压缩配置设置到 out/.config (这些内容是从原先独立的步骤移动过来的)
-      echo "CONFIG_KSU=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> out/.config
-      echo "CONFIG_KSU_MANUAL_HOOK=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_SUS_PATH=n" >> out/.config
-      echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n" >> out/.config
-      echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> out/.config
-      echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> out/.config
-      echo "CONFIG_CRYPTO_LZ4HC=y" >> out/.config
-      echo "CONFIG_CRYPTO_LZ4K=y" >> out/.config
-      echo "CONFIG_CRYPTO_LZ4KD=y" >> out/.config
-      echo "CONFIG_F2FS_FS_LZ4HC=y" >> out/.config
-      echo "CONFIG_CRYPTO_ZSTD=y" >> out/.config
-      echo "CONFIG_CRYPTO_LZ4=y" >> out/.config
-      echo "CONFIG_CRYPTO_842=y" >> out/.config
-      echo "CONFIG_ZRAM=y" >> out/.config
-      echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> out/.config
-      echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> out/.config
-      echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> out/.config
-      echo "CONFIG_ZRAM_MULTI_COMP=y" >> out/.config
-      echo "CONFIG_HZ_250=y" >> out/.config
-      echo "CONFIG_NO_HZ_IDLE=y" >> out/.config
-      echo "CONFIG_NET_SCHED=y" >> out/.config
-      echo "CONFIG_TCP_CONG_ADVANCED=y" >> out/.config
-      echo "CONFIG_TCP_CONG_BBR=y" >> out/.config
-      echo "CONFIG_NET_SCH_FQ=y" >> out/.config
-      echo "CONFIG_TCP_CONG_BIC=n" >> out/.config
-      echo "CONFIG_TCP_CONG_CUBIC=n" >> out/.config
-      echo "CONFIG_TCP_CONG_WESTWOOD=n" >> out/.config
-      echo "CONFIG_TCP_CONG_HTCP=n" >> out/.config
-      echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> out/.config
-      echo "CONFIG_SCHED_EEVDF=y" >> out/.config
-      echo "CONFIG_F2FS_FS=y" >> out/.config
-      echo "CONFIG_F2FS_STAT_FS=y" >> out/.config
-      echo "CONFIG_F2FS_FS_XATTR=y" >> out/.config
-      echo "CONFIG_F2FS_FS_POSIX_ACL=y" >> out/.config
-      echo "CONFIG_F2FS_FS_SECURITY=y" >> out/.config
-      echo "CONFIG_F2FS_CHECK_FS=y" >> out/.config
-      echo "CONFIG_F2FS_IOSTAT=y" >> out/.config
-      echo "CONFIG_F2FS_FAULT_INJECTION=n" >> out/.config
-      echo "CONFIG_F2FS_HW_PCI_ROM=n" >> out/.config
-      echo "CONFIG_F2FS_FS_ENCRYPTION=y" >> out/.config
-      echo "CONFIG_F2FS_FS_COMPRESSION=y" >> out/.config
-      echo "CONFIG_F2FS_FS_LZ4=y" >> out/.config
-      echo "CONFIG_F2FS_FS_LZO=y" >> out/.config
-      echo "CONFIG_F2FS_FS_ZSTD=y" >> out/.config
+         # 【新增】以下 echo 命令，将原先 "Add SUSFS and Compression Configuration Settings" 步骤中的配置项添加到 out/.config
+         echo "CONFIG_KSU=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> out/.config
+         echo "CONFIG_KSU_MANUAL_HOOK=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_SUS_PATH=n" >> out/.config
+         echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n" >> out/.config
+         echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> out/.config
+         echo "CONFIG_CRYPTO_LZ4HC=y" >> out/.config
+         echo "CONFIG_CRYPTO_LZ4K=y" >> out/.config
+         echo "CONFIG_CRYPTO_LZ4KD=y" >> out/.config
+         echo "CONFIG_F2FS_FS_LZ4HC=y" >> out/.config
+         echo "CONFIG_CRYPTO_ZSTD=y" >> out/.config
+         echo "CONFIG_CRYPTO_LZ4=y" >> out/.config
+         echo "CONFIG_CRYPTO_842=y" >> out/.config
+         echo "CONFIG_ZRAM=y" >> out/.config
+         echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> out/.config
+         echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> out/.config
+         echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> out/.config
+         echo "CONFIG_ZRAM_MULTI_COMP=y" >> out/.config
+         echo "CONFIG_HZ_250=y" >> out/.config
+         echo "CONFIG_NO_HZ_IDLE=y" >> out/.config
+         echo "CONFIG_NET_SCHED=y" >> out/.config
+         echo "CONFIG_TCP_CONG_ADVANCED=y" >> out/.config
+         echo "CONFIG_TCP_CONG_BBR=y" >> out/.config
+         echo "CONFIG_NET_SCH_FQ=y" >> out/.config
+         echo "CONFIG_TCP_CONG_BIC=n" >> out/.config
+         echo "CONFIG_TCP_CONG_CUBIC=n" >> out/.config
+         echo "CONFIG_TCP_CONG_WESTWOOD=n" >> out/.config
+         echo "CONFIG_TCP_CONG_HTCP=n" >> out/.config
+         echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> out/.config
+         echo "CONFIG_SCHED_EEVDF=y" >> out/.config
+         echo "CONFIG_F2FS_FS=y" >> out/.config
+         echo "CONFIG_F2FS_STAT_FS=y" >> out/.config
+         echo "CONFIG_F2FS_FS_XATTR=y" >> out/.config
+         echo "CONFIG_F2FS_FS_POSIX_ACL=y" >> out/.config
+         echo "CONFIG_F2FS_FS_SECURITY=y" >> out/.config
+         echo "CONFIG_F2FS_CHECK_FS=y" >> out/.config
+         echo "CONFIG_F2FS_IOSTAT=y" >> out/.config
+         echo "CONFIG_F2FS_FAULT_INJECTION=n" >> out/.config
+         echo "CONFIG_F2FS_HW_PCI_ROM=n" >> out/.config
+         echo "CONFIG_F2FS_FS_ENCRYPTION=y" >> out/.config
+         echo "CONFIG_F2FS_FS_COMPRESSION=y" >> out/.config
+         echo "CONFIG_F2FS_FS_LZ4=y" >> out/.config
+         echo "CONFIG_F2FS_FS_LZO=y" >> out/.config
+         echo "CONFIG_F2FS_FS_ZSTD=y" >> out/.config
 
-      # 启用 AFDO 优化，确保在 defconfig 之后写入
-      echo "CONFIG_FPROFILE_SAMPLE_PATH=\"kernel.afdo\"" >> out/.config # 修正 AFDO 文件路径
-      echo "CONFIG_FPROFILE_SAMPLE_USE=y" >> out/.config
+         # 启用 AFDO 优化，确保在 defconfig 之后写入
+         # 【保持不变】
+         echo "CONFIG_FPROFILE_SAMPLE_PATH=\"kernel.afdo\"" >> out/.config # 修正 AFDO 文件路径
+         echo "CONFIG_FPROFILE_SAMPLE_USE=y" >> out/.config
 
-      # 启用 LTO 优化，使用 shell 的条件判断语法
-      if [ "${{ inputs.ENABLE_LTO }}" = "true" ]; then
-        echo "CONFIG_LTO_CLANG=y" >> out/.config
-        echo "CONFIG_LTO=y" >> out/.config
-      fi
-      # --- 结束清理和添加配置 ---
+         # 启用 LTO 优化，使用 shell 的条件判断语法
+         # 【保持不变】
+         if [ "${{ inputs.ENABLE_LTO }}" = "true" ]; then
+           echo "CONFIG_LTO_CLANG=y" >> out/.config
+           echo "CONFIG_LTO=y" >> out/.config
+         fi
+         # --- 结束清理和添加配置 ---
 
-      # 编译内核
-      make -j$(nproc --all)
+         # 编译内核
+         # 【保持不变】
+         make -j$(nproc --all)
          echo "Checking if ThinLTO was applied:"
          find out/ -name '*.cmd' | xargs grep -E '\-flto(=thin)?' | head
 
