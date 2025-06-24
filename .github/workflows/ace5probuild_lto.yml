@@ -204,20 +204,20 @@ jobs:
           cd .. # 返回 common 目录
 
       # 步骤：准备内核配置
-      - name: Prepare Kernel Configuration
+      - name: Build Kernel
         run: |
-          # 加入 clang 到 PATH
-          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
-          # 加入 ccache 到 PATH
-          export PATH="/usr/lib/ccache:$PATH"
-          # 设置固定内核构建时间，使用输入参数
-          export KERNEL_TIME="${{ inputs.kernel_time }}"
-          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-          export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
-          # 打印验证
-          echo "KERNEL_TIME = $KERNEL_TIME"
-          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
-          # 设置基础构建参数
+        # 加入 clang 到 PATH
+        export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH" # 将 clang 添加到 PATH
+         # 加入 ccache 到 PATH
+         export PATH="/usr/lib/ccache:$PATH" # 将 ccache 添加到 PATH
+         # 设置固定内核构建时间
+         export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024" # 设置 KERNEL_TIME 环境变量
+         export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME" # 设置 KBUILD_BUILD_TIMESTAMP 环境变量
+         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s) # 设置 SOURCE_DATE_EPOCH 环境变量
+         # 打印验证
+         echo "KERNEL_TIME = $KERNEL_TIME" # 打印 KERNEL_TIME
+         echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH" # 打印 SOURCE_DATE_EPOCH
+         # 设置基础构建参数
           export LLVM=1
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
@@ -235,37 +235,33 @@ jobs:
           # 执行 defconfig。注意：gki_defconfig 通常会将 .config 写入当前目录，而不是 O=out 指定的目录
           make -j$(nproc) gki_defconfig
           
-          # --- 开始清理和添加配置到生成的 .config 文件 ---
-          # 解决重复定义警告：先删除旧的配置，再添加新的
-          # 删除 gki_defconfig 中可能重复的配置项，以避免 override 警告和潜在冲突
-          # 【新增】以下 sed 命令用于删除 gki_defconfig 中可能重复的配置项
           sed -i 
-/CONFIG_CRYPTO_ZSTD/d
- .config
+          /CONFIG_CRYPTO_ZSTD/d
+          .config
           sed -i 
-/CONFIG_CRYPTO_LZ4/d
- .config
+          /CONFIG_CRYPTO_LZ4/d
+          .config
           sed -i 
-/CONFIG_ZRAM/d
- .config
+          /CONFIG_ZRAM/d
+          .config
           sed -i 
-/CONFIG_NET_SCHED/d
- .config
+          /CONFIG_NET_SCHED/d
+          .config
           sed -i 
-/CONFIG_NET_SCH_FQ/d
- .config
+          /CONFIG_NET_SCH_FQ/d
+          .config
           sed -i 
-/CONFIG_F2FS_FS/d
- .config
+          /CONFIG_F2FS_FS/d
+          .config
           sed -i 
-/CONFIG_F2FS_FS_SECURITY/d
- .config
+          /CONFIG_F2FS_FS_SECURITY/d
+          .config
           sed -i 
-/CONFIG_F2FS_FS_COMPRESSION/d
- .config
+          /CONFIG_F2FS_FS_COMPRESSION/d
+          .config
           sed -i 
-/CONFIG_LOCALVERSION/d
- .config
+          /CONFIG_LOCALVERSION/d
+          .config
           
           # 将生成的 .config 文件移动到 'out' 目录
           mv .config out/.config
@@ -360,7 +356,10 @@ jobs:
          cd kernel_workspace/kernel_platform/common # 进入 common 目录
          # 设置 KBUILD_BUILD_TIMESTAMP
          echo "KBUILD_BUILD_TIMESTAMP=\"${{ inputs.kernel_time }}\"" >> out/.config # 设置 KBUILD
-(Content truncated due to size limit. Use line ranges to read in chunks)
+
+      - name: Show ccache stats
+        run: ccache -s || true # 显示 ccache 统计信息
+
       # 步骤：验证内核构建时间
       - name: 验证内核构建时间
         run: |
