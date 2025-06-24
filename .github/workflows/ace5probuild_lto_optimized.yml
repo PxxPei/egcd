@@ -362,7 +362,7 @@ jobs:
 
          # 编译内核
          # 【保持不变】
-         make -j$(nproc --all)
+         make -j$(nproc --all) V=2
          echo "Checking if ThinLTO was applied:"
          find out/ -name '*.cmd' | xargs grep -E '\-flto(=thin)?' | head
 
