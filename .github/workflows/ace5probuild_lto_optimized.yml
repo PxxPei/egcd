@@ -293,7 +293,7 @@ jobs:
          echo "CONFIG_KSU=y" >> out/.config
          echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> out/.config
          echo "CONFIG_KSU_MANUAL_HOOK=y" >> out/.config
-         echo "CONFIG_KSU_SUSFS=y" >> out/.config
+         echo "CONFIG_KSU_SUSFS=m" >> out/.config
          echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> out/.config
          echo "CONFIG_KSU_SUSFS_SUS_PATH=n" >> out/.config
          echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> out/.config
