@@ -176,6 +176,7 @@ jobs:
          echo "✅ SUSFS 和 syscall_hooks patch 应用完成" # 输出成功信息
       # 步骤：应用 lz4kd 补丁并更新压缩库
       - name: Apply lz4kd Patches and Update Compression Libraries
+        if: ${{ inputs.enable_feature_y }}
         run: |
          set -e # 遇到错误立即退出
          cd kernel_workspace/kernel_platform/common # 进入 common 目录
@@ -193,11 +194,13 @@ jobs:
           curl -sSL $zstd_base/decompress/zstd_decompress_module.c -o decompress.c # 下载 Zstd 解压模块
           curl -sSL $zstd_base/zstd_compat.h -o compat.h # 下载 Zstd 兼容头文件
           cd .. # 返回 common 目录
-          PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_VERSION }}/lz4kd.patch # 定义 lz4kd 补丁文件变量
-          if [[ -f "$PATCH_FILE" ]]; then # 如果补丁文件存在
-          cp "$PATCH_FILE" ./lz4kd.patch # 复制 lz4kd 补丁
-          patch -p1 -F 3 < lz4kd.patch || true # 应用 lz4kd 补丁
-          cd .. # 返回 common 目录
+         PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_VERSION }}/lz4kd.patch # 定义 lz4kd 补丁文件变量
+         if [[ -f "$PATCH_FILE" ]]; then # 如果补丁文件存在
+         cp "$PATCH_FILE" ./lz4kd.patch # 复制 lz4kd 补丁
+         patch -p1 -F 3 < lz4kd.patch || true # 应用 lz4kd 补丁
+         else
+         echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}" # 输出警告信息
+         fi
 
       # 步骤：添加 SUSFS 和压缩配置设置
       - name: Add SUSFS and Compression Configuration Settings
