@@ -307,7 +307,7 @@ jobs:
           cd kernel_workspace/kernel_platform/common
           curl -o kernel.afdo https://raw.githubusercontent.com/3620603660/egcd/refs/heads/main/kernel.afdo
 
-      # 步骤：编译内核
+            # 步骤：编译内核
       - name: Build kernel
         run: |
          # 加入 clang 到 PATH
@@ -336,12 +336,16 @@ jobs:
          cd kernel_workspace/kernel_platform/common
          mkdir -p out # 在当前目录（common）下创建 'out' 目录
 
-         # 执行 defconfig 并将输出目录设置为 out
-         make -j$(nproc) gki_defconfig # .config 文件将生成在 common/out/.config
+         # 执行 defconfig。注意：gki_defconfig 通常会将 .config 写入当前目录，而不是 O=out 指定的目录
+         make -j$(nproc) gki_defconfig
 
          # 解决重复定义警告：先删除旧的配置，再添加新的
-         sed -i '/CONFIG_F2FS_FS_COMPRESSION/d' out/.config
-         sed -i '/CONFIG_LOCALVERSION/d' out/.config
+         # 假定 .config 文件生成在当前目录
+         sed -i '/CONFIG_F2FS_FS_COMPRESSION/d' .config
+         sed -i '/CONFIG_LOCALVERSION/d' .config
+
+         # 将生成的 .config 文件移动到 out 目录
+         mv .config out/.config
 
          # 启用 AFDO 优化，确保在 defconfig 之后写入
          echo "CONFIG_FPROFILE_SAMPLE_PATH=\"kernel.afdo\"" >> out/.config # 修正 AFDO 文件路径
@@ -358,6 +362,7 @@ jobs:
 
          echo "Checking if ThinLTO was applied:"
          find out/ -name '*.cmd' | xargs grep -E '\-flto(=thin)?' | head
+
 
       # 打印 ccache 使用统计
       - name: Show ccache stats
