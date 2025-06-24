@@ -2,7 +2,7 @@
 # 这是一个 GitHub Actions 工作流，用于编译 Android 内核。
 # 它定义了触发条件、输入参数以及一系列构建步骤。
 
-name: ace5pro-afdo-build
+name: ace5pro不知道(主工作流)
 
 # 定义工作流的触发条件
 on:
@@ -319,8 +319,7 @@ jobs:
 
       # 步骤：编译内核
       - name: Build kernel
-        run: |
-          cd kernel_workspace/kernel_platform
+        run:          cd kernel_workspace/kernel_platform
           export PATH=$PWD/../prebuilts-master/clang/host/linux-x86/clang-r510928/bin:$PATH
           export CLANG_TRIPLE=aarch64-linux-gnu-
           export CROSS_COMPILE=aarch64-linux-gnu-
