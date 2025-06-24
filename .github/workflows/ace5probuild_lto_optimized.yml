@@ -333,11 +333,7 @@ jobs:
          echo "KERNEL_TIME = $KERNEL_TIME"
          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
          # 设置基础构建参数
-         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
-         RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \ # 修正了 linux-x84 为 linux-x86
-         PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
-         LD=ld.lld HOSTLD=ld.lld SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
-         echo "Using SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH"
+         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
          # 进入源码目录
          cd kernel_workspace/kernel_platform/common
 
