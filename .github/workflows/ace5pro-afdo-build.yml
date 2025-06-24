@@ -247,9 +247,10 @@ jobs:
           fi
           echo "CONFIG_LOCALVERSION_AUTO=n" >> gki_defconfig
 
-          cd ../../
           # Remove check_defconfig
           sed -i 's/check_defconfig//' ./common/build.config.gki
+
+          cd ../../
           git add -A && git commit -a -m "BUILD Kernel"
           echo "✅ Kernel Configuration and Optimizations Applied"
 
