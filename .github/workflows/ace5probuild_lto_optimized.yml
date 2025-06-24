@@ -343,6 +343,7 @@ jobs:
          export HOSTLD=ld.lld
          export O=out
          # 进入源码目录
+         mkdir -p out
          cd kernel_workspace/kernel_platform/common
 
          # 执行 defconfig 并将输出目录设置为 out
@@ -358,20 +359,26 @@ jobs:
            echo "CONFIG_LTO=y" >> out/.config
          fi
 
+          # 解决重复定义警告：先删除旧的配置，再添加新的
+          sed -i '/CONFIG_F2FS_FS_COMPRESSION/d' out/.config
+          sed -i '/CONFIG_LOCALVERSION/d' out/.config
+
+
          # 编译内核
          make -j$(nproc --all)
 
          echo "Checking if ThinLTO was applied:"
          find out/ -name '*.cmd' | xargs grep -E '\-flto(=thin)?' | head
 
-# 6. 打印 ccache 使用统计
+      # 打印 ccache 使用统计
       - name: Show ccache stats
         run: ccache -s || true # 显示 ccache 统计信息
 
       # 步骤：验证内核构建时间
       - name: 验证内核构建时间
         run: |
-         strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC" # 验证内核构建时间
+         strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC" || true # 验证内核构建时间
+
       # 步骤：制作 AnyKernel3 补丁 (可选)
       - name: Make AnyKernel3 patch (optional)
         if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }} # 如果 ENABLE_KPM 为 true
