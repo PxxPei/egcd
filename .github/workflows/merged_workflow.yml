@@ -385,28 +385,39 @@ jobs:
           # 构建内核
           make -j$(nproc --all) O=out
 
+      # 6. 打印 ccache 使用统计
+      - name: Show ccache stats
+        run: ccache -s || true # 显示 ccache 统计信息
 
-
-      # 步骤：打包内核
-      - name: Package Kernel
+      # 步骤：验证内核构建时间
+      - name: 验证内核构建时间
         run: |
-          # ... (此处应为原始 ace5probuild_commented_1.yml 中的打包步骤)
-          # 由于原始文件中这部分内容被截断，请根据实际情况补充。
-          # 通常包括生成 boot.img, dtbo.img, vendor_boot.img 等。
-          # 示例：
-          # cp out/arch/arm64/boot/Image.gz-dtb ${{ github.workspace }}/Image.gz-dtb
-          # cp out/arch/arm64/boot/dtbo.img ${{ github.workspace }}/dtbo.img
-          # cp out/arch/arm64/boot/vendor_boot.img ${{ github.workspace }}/vendor_boot.img
-          # ...
+         strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC" # 验证内核构建时间
 
-      # 步骤：上传构建产物
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+      # 步骤：制作 AnyKernel3 补丁 (可选)
+      - name: Make AnyKernel3 patch (optional)
+        if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }} # 如果 ENABLE_KPM 为 true
+        run: |
+          cd kernel_workspace/kernel_platform/dist # 进入 dist 目录
+          curl -LO https://github.com/ShirkNeko/SukiSU_KernelPatch_patch/releases/download/0.11-beta/patch_linux # 下载 patch_linux 工具
+          chmod +x patch_linux # 添加执行权限
+          ./patch_linux # 执行 patch_linux
+          rm -f Image # 移除 Image 文件
+          mv oImage Image # 重命名 oImage 为 Image
+
+      # 步骤：准备 AnyKernel3 包
+      - name: Prepare AnyKernel3 package
+        run: |
+          cd kernel_workspace/kernel_platform/dist # 进入 dist 目录
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1 # 克隆 AnyKernel3 仓库
+          rm -rf AnyKernel3/.git # 移除 .git 目录
+          rm -f AnyKernel3/push.sh # 移除 push.sh 脚本
+          cp Image AnyKernel3/ # 复制 Image 文件到 AnyKernel3 目录
+      # 步骤：上传 AnyKernel3 Artifact
+      - name: Upload AnyKernel3 artifact
+        uses: actions/upload-artifact@v4 # 使用 actions/upload-artifact@v4 动作上传 Artifact
         with:
-          name: kernel-build-artifacts
-          path: |
-            ${{ github.workspace }}/*.img
-            ${{ github.workspace }}/*.zip
-            # 根据实际打包产物调整路径
+          name: AnyKernel3_${{ github.event.inputs.FEIL }}_${{ env.KSUVER }} # Artifact 名称
+          path: kernel_workspace/kernel_platform/dist/AnyKernel3/* # Artifact 路径
 
 
