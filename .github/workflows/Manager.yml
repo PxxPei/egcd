@@ -1,85 +1,108 @@
-name: GetSukiSUManager(分工作流)
+name: 清理所有工作流运行记录
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: '最多清理的运行次数（每个工作流）'
+        required: false
+        default: '20'
+      delete_failed:
+        description: '删除失败的运行记录？'
+        required: false
+        type: boolean
+        default: true
+      delete_success:
+        description: '删除成功的运行记录？'
+        required: false
+        type: boolean
+        default: true
+      delete_cancelled:
+        description: '删除已取消的运行记录？'
+        required: false
+        type: boolean
+        default: true
+      reverse_order:
+        description: '从旧到新开始清理？'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
-  contents: write
-  actions: read
-
-on:
-  workflow_call:
-    inputs:
-      kernelsu_variant:
-        required: true
-        type: string
+  actions: write
 
 jobs:
-  get_sukisu_manager:
+  cleanup:
     runs-on: ubuntu-latest
-    env:
-      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
-      CCACHE_NOHASHDIR: "true"
-      CCACHE_HARDLINK: "true"
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     steps:
-      - name: 安装依赖
-        run: sudo apt update && sudo apt install -y git curl jq
-
-      - name: 设定 SukiSU 环境变量
+      - name: 安装 GitHub CLI 和 jq
         run: |
-          if [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
-            echo "This is the SukiSU variant"
-            git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
-            cd SukiSU-Ultra
-            KSU_GIT_VERSION=$(git rev-list --count HEAD)
-            KSU_VERSION=$((10000 + KSU_GIT_VERSION + 606))
-            echo "KSU_VERSION=$KSU_VERSION" >> $GITHUB_ENV
-          else
-            echo "Only SukiSU is supported in this workflow"
-            exit 1
-          fi
+          sudo apt-get update
+          sudo apt-get install -y gh jq
 
-      - name: 添加 SukiSU
+      - name: 登录 GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: 清理所有工作流运行记录
+        env:
+          REPO: ${{ github.repository }}
+          COUNT: ${{ inputs.count }}
+          DELETE_FAILED: ${{ inputs.delete_failed }}
+          DELETE_SUCCESS: ${{ inputs.delete_success }}
+          DELETE_CANCELLED: ${{ inputs.delete_cancelled }}
+          REVERSE_ORDER: ${{ inputs.reverse_order }}
         run: |
-          if [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
-            echo "SukiSU..."
-            REPO="SukiSU-Ultra/SukiSU-Ultra"
-            FILENAME="build-manager.yml"
+          set -e
 
-            # 修复：移除 jq 的 -s 参数
-            BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/SukiSU-Ultra/SukiSU-Ultra/actions/workflows/build-manager.yml/runs?status=success" | \
-              jq -r '.workflow_runs[0].id')
+          echo "当前仓库: $REPO"
+          echo "列出所有工作流..."
+          WORKFLOWS_JSON=$(gh api repos/$REPO/actions/workflows)
+          echo "$WORKFLOWS_JSON" | jq -r '.workflows[] | "工作流名称: \(.name), 文件路径: \(.path), ID: \(.id)"'
 
-            # 检查 BUILD_ID 是否有效
-            if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" == "null" ]; then
-              echo "Error: No successful build found!"
-              exit 1
+          WORKFLOW_IDS=$(echo "$WORKFLOWS_JSON" | jq -r '.workflows[].id')
+
+          for WORKFLOW_ID in $WORKFLOW_IDS; do
+            echo ""
+            echo "开始处理工作流 ID: $WORKFLOW_ID"
+
+            PER_PAGE=100
+            PAGE=1
+            MATCHED_RUNS="[]"
+
+            while true; do
+              RESP=$(gh api "repos/$REPO/actions/workflows/$WORKFLOW_ID/runs?per_page=$PER_PAGE&page=$PAGE")
+              RUNS=$(echo "$RESP" | jq '.workflow_runs')
+              COUNT_THIS_PAGE=$(echo "$RUNS" | jq 'length')
+              if [ "$COUNT_THIS_PAGE" -eq 0 ]; then break; fi
+              MATCHED_RUNS=$(jq -s 'add' <(echo "$MATCHED_RUNS") <(echo "$RUNS"))
+              PAGE=$((PAGE + 1))
+            done
+
+            echo "获取到运行记录数量: $(echo "$MATCHED_RUNS" | jq 'length')"
+
+            # 排序
+            if [[ "$REVERSE_ORDER" == "true" ]]; then
+              SORTED_RUNS=$(echo "$MATCHED_RUNS" | jq 'sort_by(.run_started_at)')
+            else
+              SORTED_RUNS=$(echo "$MATCHED_RUNS" | jq 'sort_by(.run_started_at) | reverse')
             fi
 
-            echo "BUILD_ID=$BUILD_ID"
-            ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/$REPO/actions/runs/$BUILD_ID/artifacts")
-            echo "ARTIFACTS=$ARTIFACTS"
+            TO_DELETE_RUNS=$(echo "$SORTED_RUNS" | jq ".[0:${COUNT}]")
 
-            DOWNLOAD_URL=$(echo "$ARTIFACTS" | jq -r '.artifacts[] | select(.name == "manager") | .archive_download_url')
+            echo "$TO_DELETE_RUNS" | jq -c '.[]' | while read run; do
+              ID=$(echo "$run" | jq -r '.id')
+              STATUS=$(echo "$run" | jq -r '.conclusion')
+              STATE=$(echo "$run" | jq -r '.status')
 
-            # 检查 DOWNLOAD_URL 是否有效
-            if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" == "null" ]; then
-              echo "Error: Artifact 'manager' not found!"
-              exit 1
-            fi
+              if [[ "$STATE" == "in_progress" || "$STATE" == "queued" ]]; then
+                echo "跳过运行 ID $ID（状态为 $STATE）"
+                continue
+              fi
 
-            # 下载并解压
-            curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o "SukiSU-管理器-${{ env.KSU_VERSION }}.zip" "$DOWNLOAD_URL"
-            echo "Manager 文件已下载为：SukiSU-管理器-${{ env.KSU_VERSION }}.zip"
-            unzip "SukiSU-管理器-${{ env.KSU_VERSION }}.zip"
-          else
-            echo "Only SukiSU is supported in this workflow"
-            exit 1
-          fi
+              if [[ "$STATUS" == "failure" && "$DELETE_FAILED" != "true" ]]; then continue; fi
+              if [[ "$STATUS" == "success" && "$DELETE_SUCCESS" != "true" ]]; then continue; fi
+              if [[ "$STATUS" == "cancelled" && "$DELETE_CANCELLED" != "true" ]]; then continue; fi
 
-      - name: 上传编译资产
-        uses: actions/upload-artifact@v4
-        with:
-          name: SukiSU-Manager-${{ env.KSU_VERSION }}
-          path: "*.apk"  # 根据实际解压后的文件调整
+              echo "删除运行记录 ID: $ID（状态: $STATUS）"
+              gh api -X DELETE "repos/$REPO/actions/runs/$ID" || echo "删除失败（ID: $ID）"
+            done
+          done
