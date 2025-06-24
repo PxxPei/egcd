@@ -309,7 +309,7 @@ jobs:
 
       # 步骤：编译内核
       - name: Build kernel
-        run: | # 已将 '丨' 修正为 '|'
+        run: |
          # 加入 clang 到 PATH
          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
          # 加入 ccache 到 PATH
@@ -330,16 +330,21 @@ jobs:
          export PAHOLE="../../prebuilts/kernel-build-tools/linux-x86/bin/pahole"
          export LD=ld.lld
          export HOSTLD=ld.lld
-         export O=out
+         export O=out # 指定输出目录为当前目录下的 'out'
+
          # 进入源码目录
-         mkdir -p out
          cd kernel_workspace/kernel_platform/common
+         mkdir -p out # 在当前目录（common）下创建 'out' 目录
 
          # 执行 defconfig 并将输出目录设置为 out
-         make -j$(nproc) gki_defconfig
+         make -j$(nproc) gki_defconfig # .config 文件将生成在 common/out/.config
+
+         # 解决重复定义警告：先删除旧的配置，再添加新的
+         sed -i '/CONFIG_F2FS_FS_COMPRESSION/d' out/.config
+         sed -i '/CONFIG_LOCALVERSION/d' out/.config
 
          # 启用 AFDO 优化，确保在 defconfig 之后写入
-         echo "CONFIG_FPROFILE_SAMPLE_PATH=\"../common/kernel.afdo\"" >> out/.config
+         echo "CONFIG_FPROFILE_SAMPLE_PATH=\"kernel.afdo\"" >> out/.config # 修正 AFDO 文件路径
          echo "CONFIG_FPROFILE_SAMPLE_USE=y" >> out/.config
 
          # 启用 LTO 优化，使用 shell 的条件判断语法
@@ -347,11 +352,6 @@ jobs:
            echo "CONFIG_LTO_CLANG=y" >> out/.config
            echo "CONFIG_LTO=y" >> out/.config
          fi
-
-          # 解决重复定义警告：先删除旧的配置，再添加新的
-          sed -i '/CONFIG_F2FS_FS_COMPRESSION/d' out/.config
-          sed -i '/CONFIG_LOCALVERSION/d' out/.config
-
 
          # 编译内核
          make -j$(nproc --all)
