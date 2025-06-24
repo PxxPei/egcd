@@ -1,0 +1,298 @@
+name: ace5pro-afdo-build-with-bazel-preproc
+on:
+  workflow_dispatch:
+    inputs:
+      CPU:
+        description: "分支名称，例如 sm8750"
+        required: true
+        default: 'sm8750'
+      FEIL:
+        description: "配置文件名称，例如 oneplus_ace5_pro"
+        required: true
+        default: 'oneplus_ace5_pro'
+      ANDROID_VERSION:
+        description: "内核对应的 Android 版本，例如 android15"
+        required: true
+        default: 'android15'
+      KERNEL_VERSION:
+        description: "内核版本，例如 6.6"
+        required: true
+        default: '6.6'
+      KERNEL_NAME:
+        description: "修改后的内核名称后缀"
+        required: true
+        default: '-android15-8-g013ec21bba94-abogki383916444'
+      local_version:
+        description: '输入内核后缀名（如-v8）'
+        required: false
+        default: '-4k'
+        type: string
+      kernel_time:
+        description: '内核构建时间（UTC 时间字符串，例如 "12月17日，周二23:36:49 UTC 2024"）'
+        required: false
+        default: '12月17日，周二23:36:49 UTC 2024'
+        type: string
+      ENABLE_LTO:
+        description: '启用 LTO (Link Time Optimization) 链接时优化'
+        required: false
+        default: false
+        type: boolean
+      PERF_DATA_URL:
+        description: 'perf.data 文件的下载链接'
+        required: true
+        default: 'https://raw.githubusercontent.com/3620603660/egcd/refs/heads/main/kernel.afdo' # 请替换为实际的 perf.data 下载链接
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+      TOKEN: ${{ secrets.TOKEN }}
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 8192
+          temp-reserve-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          
+      - name: Configure Git
+        run: |
+         git config --global user.name "build"
+         git config --global user.email "3620603668@qq.com"
+      
+      - name: Checkout  
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies  
+        run: |  
+         sudo apt-get update
+         sudo apt-get install -y python3 git curl ccache libelf-dev bazel
+      
+      - name: Restore ccache
+        uses: actions/cache@v3
+        with:
+         path: /home/runner/.ccache
+         key: ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-v3
+         restore-keys: |
+          ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-
+          ${{ runner.os }}-${{ github.repository }}-
+          ${{ runner.os }}-
+      
+      - name: Setup ccache environment  
+        run: |  
+         echo "CCACHE_DIR=/home/runner/.ccache" >> $GITHUB_ENV
+         echo "CCACHE_MAXSIZE=8G" >> $GITHUB_ENV
+         echo "CCACHE_COMPILERCHECK=%compiler% -dumpmachine; %compiler% -dumpversion" >> $GITHUB_ENV
+         echo "CCACHE_NOHASHDIR=true" >> $GITHUB_ENV
+         echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV
+         echo "CCACHE_BASEDIR=${{ github.workspace }}" >> $GITHUB_ENV
+         echo "CCACHE_LOGFILE=${{ github.workspace }}/ccache.log" >> $GITHUB_ENV
+         echo "/usr/lib/ccache" >> $GITHUB_PATH
+         
+      - name: Show ccache stats
+        run: |
+         ccache -s || true
+      
+      - name: Install repo tool
+        run: |
+         curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
+         chmod a+x ~/repo
+         sudo mv ~/repo /usr/local/bin/repo
+      
+      - name: Initialize repo and sync
+        run: |
+         mkdir kernel_workspace && cd kernel_workspace
+         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
+         repo --trace sync -c -j$(nproc --all) --no-tags
+         rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+         rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+
+      # 步骤：设置 AFDO 工具 (Bazel)
+      - name: Set up AFDO tools (Bazel)
+        run: |
+          git clone https://github.com/google/autofdo.git
+          cd autofdo
+          bazel build -c opt --copt=-Wno-error create_llvm_prof
+          cp bazel-bin/create_llvm_prof ${{ github.workspace }}/kernel_workspace/
+
+      # 步骤：下载 perf.data
+      - name: Download perf.data
+        run: |
+          cd ${{ github.workspace }}/kernel_workspace
+          wget -O perf.data ${{ github.event.inputs.PERF_DATA_URL }}
+
+      # 步骤：首次构建内核以生成 vmlinux (Bazel)
+      - name: Build Kernel (for vmlinux) with Bazel
+        id: build_for_vmlinux
+        run: |
+          cd kernel_workspace/kernel_platform/common
+          tools/bazel build //common:kernel_aarch64_dist
+
+      # 步骤：生成 AFDO profile
+      - name: Generate AFDO profile
+        run: |
+          cd ${{ github.workspace }}/kernel_workspace
+          chmod +x create_llvm_prof
+          ./create_llvm_prof --binary=kernel_platform/common/out/vmlinux --profile=perf.data --out=kernel.afdo
+          echo "AFDO_PROFILE_PATH=${{ github.workspace }}/kernel_workspace/kernel.afdo" >> $GITHUB_ENV
+
+      # 步骤：设置 SukiSU
+      - name: Set up SukiSU
+        run: |
+         cd kernel_workspace/kernel_platform
+         curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
+         cd ./KernelSU
+         KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10606)
+         echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+         export KSU_VERSION=$KSU_VERSION
+         sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+      
+      # 步骤：设置 SUSFS 并应用补丁
+      - name: Set up SUSFS & apply patches
+        run: |
+         set -e
+         cd kernel_workspace
+         git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}
+         git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
+         git clone https://$TOKEN@github.com/3620603660/boot.git
+         cd kernel_platform
+         cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch ./common/ || true
+         mkdir -p ./common/fs ./common/include/linux ./common/lib ./common/crypto
+         cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
+         cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto || true
+         cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/ || true
+         cp ../boot/1.patch ./common/
+         cd ./common
+         PATCH_FILE=50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch
+         if [[ -f "$PATCH_FILE" ]]; then
+         sed -i 's/-32,12 +32,38/-32,11 +32,37/g' "$PATCH_FILE"
+         sed -i '/#include <trace\/hooks\/fs.h>/d' "$PATCH_FILE"
+         patch -p1 < "$PATCH_FILE" || true
+         fi
+         cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
+         patch -p1 -F 3 < syscall_hooks.patch || true
+         patch -s -p1 -F 3 < 1.patch
+         echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
+      
+      # 步骤：应用 lz4kd 补丁并更新压缩库
+      - name: Apply lz4kd Patches and Update Compression Libraries
+        run: |
+         set -e
+         cd kernel_workspace/kernel_platform/common
+         PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_VERSION }}/lz4kd.patch
+         if [[ -f "$PATCH_FILE" ]]; then
+         cp "$PATCH_FILE" ./lz4kd.patch
+         patch -p1 -F 3 < lz4kd.patch || true
+         else
+         echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
+         fi
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_decompress.c
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4defs.h
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_compress.c
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4hc_compress.c
+          zstd_base="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/zstd"
+          mkdir -p lib/zstd && cd lib/zstd
+          curl -sSL $zstd_base/zstd_common_module.c -o common.c
+          curl -sSL $zstd_base/compress/zstd_compress_module.c -o compress.c
+          curl -sSL $zstd_base/decompress/zstd_decompress_module.c -o decompress.c
+          curl -sSL $zstd_base/zstd_compat.h -o compat.h
+          cd ..
+
+      # 步骤：添加 SUSFS 和压缩配置设置
+      - name: Add SUSFS and Compression Configuration Settings
+        run: |
+          cd kernel_workspace/kernel_platform
+          echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_MANUAL_HOOK=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_PATH=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4K=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4KD=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_F2FS_FS_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_842=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_ZRAM_SIZE=16G" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_HZ_250=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NO_HZ_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
+
+      # 步骤：最终内核编译 (Make + AFDO)
+      - name: Final Kernel Compilation (Make + AFDO)
+        run: |
+          cd kernel_workspace/kernel_platform/common
+          # 设置交叉编译工具链
+          export PATH="${{ github.workspace }}/kernel_workspace/prebuilts/clang/host/linux-x86/clang-r450784e/bin:${{ github.workspace }}/kernel_workspace/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:${{ github.workspace }}/kernel_workspace/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin:$PATH"
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export KBUILD_BUILD_USER="github-actions"
+          export KBUILD_BUILD_HOST="github-actions"
+          export KBUILD_COMPILER_STRING="clang-r450784e"
+          export CLANG_TRIPLE=aarch64-linux-gnu-
+          export CROSS_COMPILE=aarch64-linux-android-
+          export CROSS_COMPILE_ARM32=arm-linux-androideabi-
+
+          # 配置内核
+          make O=out ${{ github.event.inputs.FEIL }}_defconfig
+
+          # 应用 AFDO 优化
+          if [ -n "$AFDO_PROFILE_PATH" ]; then
+            echo "Applying AFDO optimization with profile: $AFDO_PROFILE_PATH"
+            make O=out LLVM_PROFDATA=$AFDO_PROFILE_PATH LLVM_PROFILE_FILE=kernel.afdo.profdata -j$(nproc --all)
+          else
+            echo "AFDO profile not found. Building without AFDO optimization."
+            make O=out -j$(nproc --all)
+          fi
+
+      # 步骤：打包内核
+      - name: Package Kernel
+        run: |
+          cd kernel_workspace/kernel_platform/common/out/arch/arm64/boot
+          mv Image.gz-dtb Image.gz-dtb-${{ github.event.inputs.local_version }}
+          zip -r kernel_package.zip Image.gz-dtb-${{ github.event.inputs.local_version }}
+
+      # 步骤：上传构建产物
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: kernel_package
+          path: kernel_workspace/kernel_platform/common/out/arch/arm64/boot/kernel_package.zip
+
+
