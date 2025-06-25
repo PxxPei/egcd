@@ -193,7 +193,7 @@ jobs:
           echo "CONFIG_CRYPTO_LZ4=y" >> gki_defconfig
 
           # Add ZRAM and BBR
-          echo "CONFIG_ZRAM=y" >> gki_defconfig
+          echo "CONFIG_ZRAM=m" >> gki_defconfig
           echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> gki_defconfig
           echo "CONFIG_ZRAM_LZO_COMPRESS=y" >> gki_defconfig
           echo "CONFIG_ZRAM_LZ4HC_COMPRESS=y" >> gki_defconfig
