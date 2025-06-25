@@ -1,0 +1,348 @@
+name: ace5pro-afdo-build-O3
+
+# 定义工作流的触发条件
+on:
+  # 当手动触发工作流时
+  workflow_dispatch:
+    # 定义工作流的输入参数
+    inputs:
+      CPU:
+        description: "分支名称，例如 sm8750"
+        required: true
+        default: "sm8750"
+      FEIL:
+        description: "配置文件名称，例如 oneplus_ace5_pro"
+        required: true
+        default: "oneplus_ace5_pro"
+      ANDROID_VERSION:
+        description: "内核对应的 Android 版本，例如 android15"
+        required: true
+        default: "android15"
+      KERNEL_VERSION:
+        description: "内核版本，例如 6.6"
+        required: true
+        default: "6.6"
+      KERNEL_NAME:
+        description: "修改后的内核名称后缀"
+        required: true
+        default: "-android15-8-g013ec21bba94-abogki383916444"
+      local_version:
+        description: "输入内核后缀名（如-v8）"
+        required: false
+        default: "-4k"
+        type: string
+      kernel_time:
+        description: "内核构建时间（UTC 时间字符串，例如 \"Tue Dec 17 23:36:49 UTC 2024\"）"
+        required: false
+        default: "Tue Dec 17 23:36:49 UTC 2024"
+        type: string
+      ENABLE_LTO:
+        description: "是否启用 LTO (Link Time Optimization) 链接时优化"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+      TOKEN: ${{ secrets.TOKEN }}
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 8192
+          temp-reserve-mb: 2048
+          swap-size-mb: 8192
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+
+      - name: Configure Git
+        run: |
+         git config --global user.name "jianqing"
+         git config --global user.email "3620603668@qq.com"
+
+      - name: Install dependencies
+        run: |
+         sudo apt update && sudo apt upgrade -y
+         sudo apt install -y python3 git curl
+
+      - name: Install repo tool
+        run: |
+         curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
+         chmod a+x ~/repo
+         sudo mv ~/repo /usr/local/bin/repo
+
+      - name: Initialize repo and sync
+        run: |
+         mkdir kernel_workspace && cd kernel_workspace
+         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ inputs.CPU }} -m ${{ inputs.FEIL }}.xml --depth=1
+         repo --trace sync -c -j$(nproc --all) --no-tags
+         rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+         rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+      
+      - name: SukiSU-Ultra & SukiSU version
+        # 移除 kernelsu_variant 和 kernelsu_version 的输入，因此这里需要调整逻辑
+        # 假设默认使用 SukiSU-Ultra 且版本为 main，或者根据需要调整
+        run: |
+          echo "BRANCH=-s susfs-main" >> $GITHUB_ENV
+
+      - name: Add SukiSU-Ultra
+        run: |
+          cd kernel_workspace/kernel_platform
+          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/main/kernel/setup.sh" | bash ${{ env.BRANCH }}
+          cd ./KernelSU
+          KSU_VERSION=$(expr $(git rev-list --count main) + 10606)
+          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+          sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+
+      - name: Set up SUSFS & apply patches
+        run: |
+         set -e # 遇到错误立即退出
+         cd kernel_workspace # 进入内核工作空间
+         git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }} # 克隆 susfs4ksu 仓库
+         git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git # 克隆 SukiSU_patch 仓库
+         git clone https://$TOKEN@github.com/3620603660/boot.git # 克隆 boot 仓库
+         cd kernel_platform # 进入内核平台目录
+         cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch ./common/ || true # 复制 SUSFS 补丁
+         mkdir -p ./common/fs ./common/include/linux ./common/lib ./common/crypto # 创建目录
+         cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true # 复制文件系统相关补丁
+         cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true # 复制 Linux 头文件相关补丁
+         cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux || true # 复制 LZ4K 相关头文件
+         cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib || true # 复制 LZ4K 相关库文件
+         cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto || true # 复制 LZ4K 相关加密文件
+         cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/ || true # 复制 LZ4K Oplus 相关文件
+         cp ../boot/1.patch ./common/ # 复制 boot 补丁
+         cd ./common # 进入 common 目录
+         PATCH_FILE=50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch # 定义补丁文件变量
+         if [[ -f "$PATCH_FILE" ]]; then # 如果补丁文件存在
+         sed -i 's/-32,12 +32,38/-32,11 +32,37/g' "$PATCH_FILE" # 修改补丁文件内容
+         sed -i '/#include <trace\/hooks\/fs.h>/d' "$PATCH_FILE" # 删除补丁文件中的特定行
+         patch -p1 < "$PATCH_FILE" || true # 应用补丁
+         fi
+         cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./ # 复制 syscall_hooks 补丁
+         patch -p1 -F 3 < syscall_hooks.patch || true # 应用 syscall_hooks 补丁
+         patch -s -p1 -F 3 < 1.patch # 应用 1.patch 补丁
+         echo "✅ SUSFS 和 syscall_hooks patch 应用完成" # 输出成功信息
+
+      - name: Apply lz4kd Patches
+        run: |
+         set -e
+         cd kernel_workspace/kernel_platform/common
+         PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_VERSION }}/lz4kd.patch
+         if [[ -f "$PATCH_FILE" ]]; then
+         cp "$PATCH_FILE" ./lz4kd.patch
+         patch -p1 -F 3 < lz4kd.patch || true
+         else
+         echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
+         fi
+
+      - name: Download kernel.afdo
+        run: |
+          cd kernel_workspace/kernel_platform/common
+          curl -LO https://raw.githubusercontent.com/3620603660/egcd/refs/heads/main/kernel.afdo
+          echo "✅ kernel.afdo downloaded"
+
+      - name: Prepare Kernel Configuration and Optimizations
+        run: |
+          cd kernel_workspace/kernel_platform/common/arch/arm64/configs/
+
+          # Clean up potentially conflicting existing configuration entries
+          sed -i '/CONFIG_CRYPTO_ZSTD/d' gki_defconfig
+          sed -i '/CONFIG_CRYPTO_LZ4/d' gki_defconfig
+          sed -i '/CONFIG_ZRAM/d' gki_defconfig
+          sed -i '/CONFIG_NET_SCHED/d' gki_defconfig
+          sed -i '/CONFIG_NET_SCH_FQ/d' gki_defconfig
+          sed -i '/CONFIG_F2FS_FS/d' gki_defconfig
+          sed -i '/CONFIG_F2FS_FS_SECURITY/d' gki_defconfig
+          sed -i '/CONFIG_F2FS_FS_COMPRESSION/d' gki_defconfig
+          sed -i '/CONFIG_LOCALVERSION/d' gki_defconfig
+          sed -i '/CONFIG_LOCALVERSION_AUTO/d' gki_defconfig
+
+          # Add KSU and SUSFS configuration settings
+          echo "CONFIG_KSU=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> gki_defconfig
+          echo "CONFIG_KSU_MANUAL_HOOK=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_PATH=n" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> gki_defconfig
+          echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> gki_defconfig
+
+          # Add compression algorithms
+          echo "CONFIG_CRYPTO_LZ4HC=y" >> gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4K=y" >> gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4KD=y" >> gki_defconfig
+          echo "CONFIG_CRYPTO_842=y" >> gki_defconfig
+          echo "CONFIG_CRYPTO_ZSTD=y" >> gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4=y" >> gki_defconfig
+
+          # Add ZRAM and BBR
+          echo "CONFIG_ZRAM=y" >> gki_defconfig
+          echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> gki_defconfig
+          echo "CONFIG_ZRAM_LZO_COMPRESS=y" >> gki_defconfig
+          echo "CONFIG_ZRAM_LZ4HC_COMPRESS=y" >> gki_defconfig
+          echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> gki_defconfig
+          echo "CONFIG_NET_SCHED=y" >> gki_defconfig
+          echo "CONFIG_NET_SCH_FQ=y" >> gki_defconfig
+          echo "CONFIG_NET_SCH_FQ_CODEL=y" >> gki_defconfig
+          echo "CONFIG_NET_SCH_CAKE=y" >> gki_defconfig
+          echo "CONFIG_TCP_CONG_BBR=y" >> gki_defconfig
+
+          # Add F2FS
+          echo "CONFIG_F2FS_FS=y" >> gki_defconfig
+          echo "CONFIG_F2FS_FS_SECURITY=y" >> gki_defconfig
+          echo "CONFIG_F2FS_FS_COMPRESSION=y" >> gki_defconfig
+
+          # Add AFDO optimization settings
+          echo "CONFIG_FPROFILE_SAMPLE_PATH=\"kernel.afdo\"" >> gki_defconfig
+          echo "CONFIG_FPROFILE_SAMPLE_USE=y" >> gki_defconfig
+
+          # Add LTO optimization settings conditionally
+          if [ "${{ inputs.ENABLE_LTO }}" = "true" ]; then
+            echo "CONFIG_LTO_CLANG=y" >> gki_defconfig
+            echo "CONFIG_LTO=y" >> gki_defconfig
+          fi
+
+          # Set LOCALVERSION
+          if [ "${{ inputs.local_version }}" != "-4k" ]; then
+            echo "CONFIG_LOCALVERSION=\"${{ inputs.local_version }}\"" >> gki_defconfig
+          else
+            echo "CONFIG_LOCALVERSION=\"-4k\"" >> gki_defconfig
+          fi
+          echo "CONFIG_LOCALVERSION_AUTO=n" >> gki_defconfig
+
+          echo "✅ Kernel Configuration and Optimizations Applied"
+
+# ===== AutoFDO 自动生成与启用 =====
+      - name: AutoFDO Profile Generation and Activation
+        run: |
+          SCRIPT_DIR="$(pwd)"
+          AFDO_BIN="${SCRIPT_DIR}/create_llvm_prof"
+          PERF_DATA="/root/kernel_build/perf.data"
+          VMLINUX="/root/work1/kernel_platform/common/out/vmlinux"
+          AFDO_PROFILE="/root/kernel_build/kernel.afdo"
+
+          echo "=== AutoFDO 文件检查 ==="
+          echo "AFDO_PROFILE = $AFDO_PROFILE"
+          if [ -f "$AFDO_PROFILE" ]; then
+            echo "文件存在，大小: $(stat -c%s "$AFDO_PROFILE") bytes"
+          else
+            echo "文件不存在！"
+          fi
+
+          # 如果存在 perf.data 和 vmlinux 且 profile 未生成，尝试生成
+          if [ -x "$AFDO_BIN" ] && [ -f "$PERF_DATA" ] && [ -f "$VMLINUX" ] && [ ! -f "$AFDO_PROFILE" ]; then
+            echo "🧪 检测到 perf.data 和 vmlinux，准备生成 AutoFDO profile..."
+            $AFDO_BIN --binary="$VMLINUX" --profile="$PERF_DATA" --out="$AFDO_PROFILE" && \
+            echo "✅ 已生成 $AFDO_PROFILE" || echo "❌ AutoFDO 生成失败"
+          fi
+
+          cd "${{ github.workspace }}/kernel_workspace/kernel_platform/common"
+          mkdir -p out
+
+# 步骤：应用 lz4kd 补丁并更新压缩库
+      - name: Apply lz4kd Patches and Update Compression Libraries
+        run: |
+         set -e # 遇到错误立即退出
+         cd kernel_workspace/kernel_platform/common # 进入 common 目录
+         PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_VERSION }}/lz4kd.patch # 定义 lz4kd 补丁文件变量
+         if [[ -f "$PATCH_FILE" ]]; then # 如果补丁文件存在
+         cp "$PATCH_FILE" ./lz4kd.patch # 复制 lz4kd 补丁
+         patch -p1 -F 3 < lz4kd.patch || true # 应用 lz4kd 补丁
+         else
+         echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}" # 输出警告信息
+         fi
+
+      - name: 🔧 Update compression algorithms (更新压缩算法)
+        run: |
+          cd kernel_workspace/kernel_platform/common
+          # 更新 LZ4 实现
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_decompress.c # 下载 LZ4 解压代码
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4defs.h # 下载 LZ4 定义头文件
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_compress.c # 下载 LZ4 压缩代码
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4hc_compress.c # 下载 LZ4HC 压缩代码
+
+
+           # 更新 Zstd 实现 
+          zstd_base="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/zstd" # Zstd 库基础 URL
+          mkdir -p lib/zstd && cd lib/zstd # 创建 lib/zstd 目录并进入
+          curl -sSL $zstd_base/zstd_common_module.c -o common.c # 下载 Zstd 公共模块
+          curl -sSL $zstd_base/compress/zstd_compress_module.c -o compress.c # 下载 Zstd 压缩模块
+          curl -sSL $zstd_base/decompress/zstd_decompress_module.c -o decompress.c # 下载 Zstd 解压模块
+          curl -sSL $zstd_base/zstd_compat.h -o compat.h # 下载 Zstd 兼容头文件
+          cd .. # 返回 common 目录
+
+      - name: Remove check_defconfig and Commit Changes
+        run: |
+          cd kernel_workspace/kernel_platform/common/
+          sed -i 's/check_defconfig//' build.config.gki
+          git add -A && git commit -a -m "BUILD Kernel"
+          echo "✅ build.config.gki modified and changes committed"
+
+      - name: Add make name
+        run: |
+         cd kernel_workspace/kernel_platform || exit 1
+
+          # 转义特殊字符（防御性处理）
+          ESCAPED_NAME=$(echo "${{ inputs.KERNEL_NAME }}" | sed 's/[\/&]/\\&/g')
+
+          # 使用备选分隔符执行替换
+          sed -i "s|res=\"\$res\$(cat \"\$file\")\"|res=\"${ESCAPED_NAME}\"|g" ./common/scripts/setlocalversion
+
+          # 验证修改结果
+          echo "==== 最终配置 ===="
+          grep 'res=' ./common/scripts/setlocalversion
+
+      - name: Add sched_ext
+        run: |
+         cd kernel_workspace/kernel_platform/ # 进入内核平台目录
+         git clone https://github.com/3620603660/sched_ext.git # 克隆 sched_ext 仓库
+         cp -r ./sched_ext/* ./common/kernel/sched # 复制 sched_ext 文件
+         rm -rf ./sched_ext/.git # 移除 .git 目录
+         
+
+      - name: Set build timestamp
+        run: |         
+         export KERNEL_TIME="${{ inputs.kernel_time }}"
+         export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
+         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
+         echo "KERNEL_TIME = $KERNEL_TIME"
+         echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+         echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
+         
+      - name: Build kernel
+        run: |
+         cd kernel_workspace/kernel_platform
+         tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
+         
+      - name: Prepare AnyKernel3 Packages
+        run: |
+         cd kernel_workspace/kernel_platform/dist
+         git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
+         rm -rf AnyKernel3/.git
+         rm -f AnyKernel3/push.sh
+         cp Image AnyKernel3/
+                         
+      - name: Upload AnyKernel3
+        uses: actions/upload-artifact@v4
+        with:
+         name: AnyKernel3_oneplus_ace5pro
+         path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
+
+
