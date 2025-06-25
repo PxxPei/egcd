@@ -76,7 +76,7 @@ jobs:
         uses: actions/checkout@v4  
 
       # 2. 安装构建依赖（包括 ccache）  
-          - name: Install Dependencies
+      - name: Install Dependencies
         run: |
          sudo apt-get update
          sudo apt-get install -y python3 git curl ccache libelf-dev llvm-bolt
