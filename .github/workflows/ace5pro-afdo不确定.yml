@@ -261,9 +261,6 @@ jobs:
           echo "CONFIG_F2FS_FS_LZO=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 F2FS 文件系统 LZO 压缩
           echo "CONFIG_F2FS_FS_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 F2FS 文件系统 ZSTD 压缩
           sed -i 's/check_defconfig//' ./common/build.config.gki # 移除 build.config.gki 中的 check_defconfig
-       
-          # 内存管理优化
-          echo "CONFIG_MEMCG_SWAP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用内存控制组与交换空间集成
 
           # I/O调度器优化
           echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline I/O调度器
