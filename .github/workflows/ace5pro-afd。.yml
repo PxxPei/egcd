@@ -1,0 +1,379 @@
+name: ace5pro加入afdo其它优化(主工作流)
+on:
+  workflow_dispatch:
+    inputs:
+      CPU:
+        description: "分支"
+        required: true
+        default: 'sm8750'
+      FEIL:
+        description: "配置文件"
+        required: true
+        default: 'oneplus_ace5_pro'
+      ANDROID_VERSION:
+        description: "内核安卓版本"
+        required: true
+        default: 'android15'
+      KERNEL_VERSION:
+        description: "内核版本"
+        required: true
+        default: '6.6'
+      KERNEL_NAME:
+        description: "修改内核名称"
+        required: true
+        default: '-android15-8-g013ec21bba94-abogki383916444'
+      ENABLE_KPM:
+        description: "启用kpm"
+        required: false
+        default: false
+        type: boolean
+      local_version:
+        description: '输入内核后缀名（如-v8）'
+        required: false
+        default: '-4k'
+        type: string
+      remove_default_4k:
+        description: '是否删除默认的 -4k 后缀？（勾选则删除）'
+        required: false
+        default: false
+        type: boolean
+      kernel_time:
+        description: '内核构建时间（UTC 时间字符串，例如 "Tue Dec 17 23:36:49 UTC 2024"）'
+        required: false
+        default: 'Tue Dec 17 23:36:49 UTC 2024'
+        type: string
+      ENABLE_LTO:
+        description: '启用 LTO'
+        required: false
+        default: false
+        type: boolean
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+      TOKEN: ${{ secrets.TOKEN }}
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 8192
+          temp-reserve-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          
+      - name: Configure Git
+        run: |
+         git config --global user.name "build"
+         git config --global user.email "3620603668@qq.com"
+
+      # 1. 拉取仓库  
+      - name: Checkout  
+        uses: actions/checkout@v4  
+
+      # 2. 安装构建依赖（包括 ccache）  
+      - name: Install Dependencies  
+        run: |  
+         sudo apt-get update  
+         sudo apt-get install -y python3 git curl ccache libelf-dev  
+
+      # 3. 恢复 ccache 缓存  
+      - name: Restore ccache
+        uses: actions/cache@v3
+        with:
+         path: /home/runner/.ccache
+         key: ${{ runner.os }}-${{ github.repository }}-v2
+         restore-keys: |
+          ${{ runner.os }}-${{ github.repository }}-
+          ${{ runner.os }}-
+          ccache-
+
+      # 4. 设置 ccache 环境变量  
+      - name: Setup ccache environment  
+        run: |  
+         echo "CCACHE_DIR=/home/runner/.ccache" >> $GITHUB_ENV  
+         echo "CCACHE_MAXSIZE=8G" >> $GITHUB_ENV  
+         echo "CCACHE_COMPILERCHECK=%compiler% -dumpmachine; %compiler% -dumpversion" >> $GITHUB_ENV  
+         echo "CCACHE_NOHASHDIR=true" >> $GITHUB_ENV  
+         echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV  
+         echo "CCACHE_BASEDIR=${{ github.workspace }}" >> $GITHUB_ENV  
+         echo "CCACHE_LOGFILE=${{ github.workspace }}/ccache.log" >> $GITHUB_ENV  
+         echo "/usr/lib/ccache" >> $GITHUB_PATH  
+         
+      - name: Show ccache stats
+        run: |
+         ccache -s || true
+
+      - name: Install repo tool
+        run: |
+         curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
+         chmod a+x ~/repo
+         sudo mv ~/repo /usr/local/bin/repo
+
+      - name: Initialize repo and sync
+        run: |
+         mkdir kernel_workspace && cd kernel_workspace
+         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
+         repo --trace sync -c -j$(nproc --all) --no-tags
+         rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+         rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+         
+      - name: Set up SukiSU
+        run: |
+         cd kernel_workspace/kernel_platform
+         curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
+         cd ./KernelSU
+         KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10606)
+         echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+         export KSU_VERSION=$KSU_VERSION
+         sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+
+      - name: Set up SUSFS & apply patches
+        run: |
+         set -e
+         cd kernel_workspace
+         git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}
+         git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
+         git clone https://$TOKEN@github.com/3620603660/boot.git
+         cd kernel_platform
+         cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch ./common/ || true
+         mkdir -p ./common/fs ./common/include/linux ./common/lib ./common/crypto
+         cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
+         cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto || true
+         cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/ || true
+         cp ../boot/1.patch ./common/
+         cd ./common
+         PATCH_FILE=50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch
+         if [[ -f "$PATCH_FILE" ]]; then
+         sed -i 's/-32,12 +32,38/-32,11 +32,37/g' "$PATCH_FILE"
+         sed -i '/#include <trace\/hooks\/fs.h>/d' "$PATCH_FILE"
+         patch -p1 < "$PATCH_FILE" || true
+         fi
+         cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
+         patch -p1 -F 3 < syscall_hooks.patch || true
+         patch -s -p1 -F 3 < 1.patch
+         echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
+
+      - name: Apply lz4kd Patches
+        run: |
+         set -e
+         cd kernel_workspace/kernel_platform/common
+         PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_VERSION }}/lz4kd.patch
+         if [[ -f "$PATCH_FILE" ]]; then
+         cp "$PATCH_FILE" ./lz4kd.patch
+         patch -p1 -F 3 < lz4kd.patch || true
+         else
+         echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
+         fi
+         
+      - name: 🔧 Update compression algorithms (更新压缩算法)
+        run: |
+          cd kernel_workspace/kernel_platform/common
+          # 更新 LZ4 实现
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_decompress.c # 下载 LZ4 解压代码
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4defs.h # 下载 LZ4 定义头文件
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_compress.c # 下载 LZ4 压缩代码
+          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torval          # KernelSU (KSU) 相关配置
+           # KernelSU (KSU) 相关配置
+          # KernelSU (KSU) 相关配置
+          echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用KernelSU
+          echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用SUSFS SU功能
+          echo "CONFIG_KSU_MANUAL_HOOK=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用KSU手动Hook
+          
+          # SUSFS (SukiSU Filesystem) 配置
+          echo "CONFIG_KSU_SUSFS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用SUSFS
+          echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用SUSFS魔术挂载
+          echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> ./common/arch/arm64/configs/gki_defconfig # 禁用SUSFS路径
+          echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用SUSFS挂载
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig # 自动添加KSU默认挂载
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig # 自动添加SUSFS绑定挂载
+          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用SUSFS KSTAT
+          echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用SUSFS OverlayFS
+          echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用SUSFS尝试卸载
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig # 自动添加尝试卸载绑定挂载
+          echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用SUSFS欺骗uname
+          echo "CONFIG_KSU_SUSFS_ENABLE_LOG=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用SUSFS日志以减少开销
+          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> ./common/arch/arm64/configs/gki_defconfig # 隐藏SUSFS符号
+          echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./common/arch/arm64/configs/gki_defconfig # 欺骗命令行或启动配置
+          echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用SUSFS打开重定向
+          
+          # 压缩算法配置
+          echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用LZ4HC加密
+          echo "CONFIG_CRYPTO_LZ4K=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用LZ4K加密
+          echo "CONFIG_CRYPTO_LZ4KD=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用LZ4KD加密
+          echo "CONFIG_F2FS_FS_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS文件系统LZ4HC压缩
+          echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用ZSTD加密
+          echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用LZ4加密
+          echo "CONFIG_CRYPTO_842=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用842加密
+
+          # ZRAM及其压缩选项配置
+          echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用ZRAM
+          echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用ZRAM LZ4压缩
+          echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用ZRAM LZ4KD压缩
+          echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用ZRAM ZSTD压缩
+          echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用ZRAM多压缩器支持
+
+          # 网络和通用Linux优化配置
+          echo "CONFIG_HZ_250=y" >> ./common/arch/arm64/configs/gki_defconfig # 设置时钟频率为250Hz
+          echo "CONFIG_NO_HZ_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用空闲时无时钟节拍
+          echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
+          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级TCP拥塞控制
+          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用BBR TCP拥塞控制算法
+          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用FQ网络调度器
+          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用BIC TCP拥塞控制算法
+          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用CUBIC TCP拥塞控制算法
+          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用WESTWOOD TCP拥塞控制算法
+          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用HTCP TCP拥塞控制算法
+          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig # 设置默认TCP拥塞控制算法为BBR
+          echo "CONFIG_SCHED_EEVDF=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用EEVDF调度器
+          echo "CONFIG_F2FS_FS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS文件系统
+          echo "CONFIG_F2FS_STAT_FS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS统计信息
+          echo "CONFIG_F2FS_FS_XATTR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS扩展属性
+          echo "CONFIG_F2FS_FS_POSIX_ACL=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS POSIX ACL
+          echo "CONFIG_F2FS_FS_SECURITY=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS安全性
+          echo "CONFIG_F2FS_CHECK_FS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS文件系统检查
+          echo "CONFIG_F2FS_IOSTAT=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS IO统计
+          echo "CONFIG_F2FS_FAULT_INJECTION=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用F2FS故障注入
+          echo "CONFIG_F2FS_HW_PCI_ROM=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用F2FS硬件PCI ROM
+          echo "CONFIG_F2FS_FS_ENCRYPTION=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS文件系统加密
+          echo "CONFIG_F2FS_FS_COMPRESSION=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS文件系统压缩
+          echo "CONFIG_F2FS_FS_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS文件系统LZ4压缩
+          echo "CONFIG_F2FS_FS_LZO=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS文件系统LZO压缩
+          echo "CONFIG_F2FS_FS_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用F2FS文件系统ZSTD压缩
+          
+          # CPU调度器微调
+          echo "CONFIG_SCHED_TUNE_BOOST=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用调度器性能提升
+
+          # 内存管理优化
+          echo "CONFIG_MEMCG_SWAP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用内存控制组与交换空间集成
+
+          # I/O调度器优化
+          echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline I/O调度器
+          echo "CONFIG_BLK_MQ_IOSCHED_KYBER=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用kyber I/O调度器
+          echo "CONFIG_DEFAULT_IOSCHED=\"mq-deadline\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置默认I/O调度器为mq-deadline
+
+          # 电源管理与功耗优化
+          echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用schedutil CPU频率调节器
+          echo "CONFIG_PM_OPP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用操作点电源管理
+          echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用CPU空闲状态管理
+          echo "CONFIG_CPU_IDLE_GOV_MENU=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用CPU空闲状态菜单调节器
+
+          # 禁用不必要的调试选项
+          echo "CONFIG_DEBUG_KERNEL=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用内核调试
+          echo "CONFIG_DEBUG_INFO=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用调试信息
+          echo "CONFIG_FTRACE=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用FTRACE
+          echo "CONFIG_KPROBES=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用KPROBES
+          echo "CONFIG_UPROBES=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用UPROBES
+fconfig # 禁用UPROBES
+config # 禁用UPROBES
+     
+         export SOURCE_DATE_EPOCH=$(date -d "Tue Dec 17 23:36:49 UTC 2024" +%s)
+         echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
+   
+      - name: Build Kernel
+        run: |
+         # 加入 clang 到 PATH
+         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+         # 加入 ccache 到 PATH
+         export PATH="/usr/lib/ccache:$PATH" 
+
+         # 设置固定内核构建时间
+         export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
+         export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
+         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
+         # 设置 AFDO 配置文件路径
+         export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
+         if [ ! -f "$AFDO_PROFILE" ]; then
+           echo "Error: AFDO profile not found at $AFDO_PROFILE"
+         exit 1
+         fi
+
+         # 打印验证
+         echo "KERNEL_TIME = $KERNEL_TIME"
+         echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+         echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
+
+         # 设置一些通用参数（便于后续维护）
+         export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
+         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
+         RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
+         PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
+         LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
+
+         # 进入源码目录
+         cd kernel_workspace/kernel_platform/common
+
+         # 执行 defconfig
+         make -j$(nproc) $MAKE_ARGS gki_defconfig
+
+         # 编译全部目标
+         make -j$(nproc) $MAKE_ARGS all
+
+         # 创建输出目录并复制 Image
+         mkdir -p ../dist
+         cp out/arch/arm64/boot/Image ../dist/
+
+      - name: 验证内核构建时间
+        run: |
+         strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC"
+
+      - name: Make AnyKernel3 patch (optional)
+        if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }}
+        run: |
+          cd kernel_workspace/kernel_platform/dist
+          curl -LO https://github.com/ShirkNeko/SukiSU_KernelPatch_patch/releases/download/0.11-beta/patch_linux
+          chmod +x patch_linux
+          ./patch_linux
+          rm -f Image
+          mv oImage Image
+
+      - name: Prepare AnyKernel3 package
+        run: |
+          cd kernel_workspace/kernel_platform/dist
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
+          rm -rf AnyKernel3/.git
+          rm -f AnyKernel3/push.sh
+          cp Image AnyKernel3/
+
+      - name: Upload AnyKernel3 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyKernel3_oneplus_ace5pro_${{ env.KSUVER }}_sukisu
+          path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
+
+          echo "CONFIG_SCHED_TUNE_BOOST=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用调度器性能提升
+
+
+
+          echo "CONFIG_MEMCG_SWAP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用内存控制组与交换空间集成
+
+
+
+          echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline I/O调度器
+          echo "CONFIG_BLK_MQ_IOSCHED_KYBER=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用kyber I/O调度器
+          echo "CONFIG_DEFAULT_IOSCHED=\"mq-deadline\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置默认I/O调度器为mq-deadline
+
+
+
+          echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用schedutil CPU频率调节器
+          echo "CONFIG_PM_OPP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用操作点电源管理
+          echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用CPU空闲状态管理
+          echo "CONFIG_CPU_IDLE_GOV_MENU=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用CPU空闲状态菜单调节器
+
+
+
+          echo "CONFIG_DEBUG_KERNEL=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用内核调试
+          echo "CONFIG_DEBUG_INFO=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用调试信息
+          echo "CONFIG_FTRACE=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用FTRACE
+          echo "CONFIG_KPROBES=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用KPROBES
+          echo "CONFIG_UPROBES=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用UPROBES
+          echo "CONFIG_KSU_SUSFS_ENABLE_LOG=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用KSU_SUSFS日志
+
+
