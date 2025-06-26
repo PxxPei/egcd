@@ -261,10 +261,7 @@ jobs:
           echo "CONFIG_F2FS_FS_LZO=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 F2FS 文件系统 LZO 压缩
           echo "CONFIG_F2FS_FS_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 F2FS 文件系统 ZSTD 压缩
           sed -i 's/check_defconfig//' ./common/build.config.gki # 移除 build.config.gki 中的 check_defconfig
-         
-         # CPU调度器微调
-          echo "CONFIG_SCHED_TUNE_BOOST=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用调度器性能提升
-
+       
           # 内存管理优化
           echo "CONFIG_MEMCG_SWAP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用内存控制组与交换空间集成
 
@@ -280,13 +277,9 @@ jobs:
           echo "CONFIG_CPU_IDLE_GOV_MENU=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用CPU空闲状态菜单调节器
 
           # 禁用不必要的调试选项
-          echo "CONFIG_DEBUG_KERNEL=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用内核调试
-          echo "CONFIG_DEBUG_INFO=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用调试信息
           echo "CONFIG_FTRACE=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用FTRACE
           echo "CONFIG_KPROBES=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用KPROBES
           echo "CONFIG_UPROBES=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用UPROBES
-fconfig # 禁用UPROBES
-config # 禁用UPROBES
          
           # Remove check_defconfig
           sed -i 's/check_defconfig//' ./common/build.config.gki
