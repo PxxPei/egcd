@@ -268,13 +268,10 @@ jobs:
           # I/O调度器优化
           echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline I/O调度器
           echo "CONFIG_BLK_MQ_IOSCHED_KYBER=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用kyber I/O调度器
-          echo "CONFIG_DEFAULT_IOSCHED=\"mq-deadline\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置默认I/O调度器为mq-deadline
+          echo "CONFIG_BLK_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig # Enable BFQ I/O scheduler
+          echo "CONFIG_BLK_MQ_IOSCHED_NONE=y" >> ./common/arch/arm64/configs/gki_defconfig # Enable NONE I/O scheduler
+          echo "CONFIG_DEFAULT_IOSCHED=\"mq-deadline\"" >> ./common/arch/arm64/configs/gki_defconfig # Set mq-deadline as default I/O scheduler
 
-          # 电源管理与功耗优化
-          echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用schedutil CPU频率调节器
-          echo "CONFIG_PM_OPP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用操作点电源管理
-          echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用CPU空闲状态管理
-          echo "CONFIG_CPU_IDLE_GOV_MENU=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用CPU空闲状态菜单调节器
 
           # Remove check_defconfig
           sed -i 's/check_defconfig//' ./common/build.config.gki
