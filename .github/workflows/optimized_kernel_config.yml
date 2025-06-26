@@ -27,7 +27,7 @@ on:
        # required: false
        # default: false
        # type: boolean
-     # local_version:
+      local_version:
         description: '输入内核后缀名（如-v8）'
         required: false
         default: '-4k'
@@ -257,11 +257,7 @@ jobs:
           echo "CONFIG_F2FS_FS_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 F2FS 文件系统 LZ4 压缩
           echo "CONFIG_F2FS_FS_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 F2FS 文件系统 ZSTD 压缩
           sed -i 's/check_defconfig//' ./common/build.config.gki # 移除 build.config.gki 中的 check_defconfig
-         
-         # CPU调度器微调
-          echo "CONFIG_SCHED_TUNE_BOOST=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用调度器性能提升
-          echo "CONFIG_SCHED_MC=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用多核调度器支持
-
+        
           # 内存管理优化
           echo "CONFIG_MEMCG_SWAP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用内存控制组与交换空间集成
 
