@@ -246,6 +246,11 @@ jobs:
           echo "CONFIG_TCP_CONG_WESTWOOD=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_HTCP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
           echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig # 设置默认 TCP 拥塞控制算法为 BBR
+          echo "CONFIG_CPU_FREQ=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NO_HZ_FULL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_INET=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NET_RX_BUSY_POLL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NET_RX_BUSY_READ=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SCHED_EEVDF=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 EEVDF 调度器
           echo "CONFIG_F2FS_FS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 F2FS 文件系统
           echo "CONFIG_F2FS_STAT_FS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 F2FS 统计信息
