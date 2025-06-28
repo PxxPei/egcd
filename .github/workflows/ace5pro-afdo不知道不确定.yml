@@ -40,7 +40,7 @@ on:
       ENABLE_LTO:
         description: '启用 LTO'
         required: false
-        default: falseAdd comment更多操作
+        default: false
         type: boolean
 
 
