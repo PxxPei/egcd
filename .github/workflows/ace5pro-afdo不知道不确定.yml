@@ -239,11 +239,12 @@ jobs:
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
           echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
           echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
-          echo "CONFIG_TCP_CONG_BIC=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_CUBIC=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_WESTWOOD=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_HTCP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 BIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 CUBIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 WESTWOOD TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 HTCP TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_BBR3=y" >> ./common/arch/arm64/configs/gki_defconfig #启用 BBR3 TCP拥塞控制算法
+          echo "CONFIG_DEFAULT_TCP_CONG=bbr3" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_INET=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NET_RX_BUSY_POLL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NET_RX_BUSY_READ=y" >> ./common/arch/arm64/configs/gki_defconfig
