@@ -344,7 +344,7 @@ jobs:
          echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
 
          # 设置一些通用参数（便于后续维护）
-         export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE -O3 -march=armv9-a -ffunction-sections -fdata-sections"
+         export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE -O3"
          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
          RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
          PAHOLE=/usr/bin/pahole \
