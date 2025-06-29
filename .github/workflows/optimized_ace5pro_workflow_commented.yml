@@ -251,7 +251,7 @@ jobs: # 定义工作流中的作业
           echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 WESTWOOD TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 HTCP TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_BBR3=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR3 TCP拥塞控制算法
-          echo "CONFIG_DEFAULT_TCP_CONG=bbr3" >> ./common/arch/arm64/configs/gki_defconfig # 设置默认TCP拥塞控制算法为BBR3
+          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig # 设置默认TCP拥塞控制算法为BBR3
           echo "CONFIG_INET=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用IPv4协议栈
           echo "CONFIG_NET_RX_BUSY_POLL=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络接收忙轮询
           echo "CONFIG_NET_RX_BUSY_READ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络接收忙读
