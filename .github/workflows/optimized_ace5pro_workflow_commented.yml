@@ -305,6 +305,35 @@ jobs: # 定义工作流中的作业
           cd common
           git add -A && git commit -a -m "BUILD Kernel with LTO enabled" # 提交内核构建相关的修改
 
+      - name: Add make name
+        run: |
+         cd kernel_workspace/kernel_platform
+         sed -i '186s|echo ".*"|echo "${KERNELVERSION}${scm_version}${config_localversion}"|' common/scripts/setlocalversion
+         sed -i "s/\${scm_version}/${{ github.event.inputs.KERNEL_NAME }}/g" ./common/scripts/setlocalversion
+
+      - name: 设置 CONFIG_LOCALVERSION
+        run: |
+         cd kernel_workspace/kernel_platform
+         echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.local_version }}"' >> ./common/arch/arm64/configs/gki_defconfig
+
+    
+      - name: 拉取并集成 sched_ext 调度器
+        run: |
+         cd kernel_workspace/kernel_platform/
+         git clone https://github.com/3620603660/sched_ext.git
+         cp -r ./sched_ext/* ./common/kernel/sched
+         rm -rf ./sched_ext/.git
+
+      - name: 拉取afdo
+        run: |
+          cd kernel_workspace/kernel_platform/
+          git clone https://github.com/3620603660/afdo.git
+            
+      - name: Set build timestamp
+        run: |         
+         export SOURCE_DATE_EPOCH=$(date -d "Tue Dec 17 23:36:49 UTC 2024" +%s)
+         echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
+
       # 6. 内核编译与打包
       - name: Build Kernel
         run: |
