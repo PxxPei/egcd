@@ -74,18 +74,15 @@ jobs: # 定义工作流中的作业
           sudo apt-get update # 更新apt包列表
           sudo apt-get install -y python3 git curl ccache libelf-dev # 安装必要的依赖包
 
-      - name: Install repo tool # 步骤名称：安装repo工具
-        run: | # 执行多行shell命令
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo # 下载repo工具
-          chmod a+x ~/repo # 赋予执行权限
-          sudo mv ~/repo /usr/local/bin/repo # 将repo工具移动到PATH路径下
+      - name: Checkout # 步骤名称：检出代码
+        uses: actions/checkout@v4 # 使用GitHub Actions官方检出Action
 
       # 2. Ccache 配置与恢复
       - name: Restore ccache # 步骤名称：恢复ccache缓存
         uses: actions/cache@v4 # 使用GitHub Actions缓存Action
         with: # Action的输入参数
           path: /home/runner/.ccache # 缓存路径
-          key: ${{ runner.os }}-${{ github.repository }}-v2 # 缓存键，用于唯一标识缓存
+          key: ${{ runner.os }}-${{ github.repository }}-v1 # 缓存键，用于唯一标识缓存
           restore-keys: | # 恢复缓存的备用键
             ${{ runner.os }}-${{ github.repository }}-
             ${{ runner.os }}-
@@ -107,8 +104,11 @@ jobs: # 定义工作流中的作业
           ccache -s || true # 显示ccache统计信息，如果失败则忽略错误
 
       # 3. 仓库拉取与初始化
-      - name: Checkout # 步骤名称：检出代码
-        uses: actions/checkout@v4 # 使用GitHub Actions官方检出Action
+      - name: Install repo tool # 步骤名称：安装repo工具
+        run: | # 执行多行shell命令
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo # 下载repo工具
+          chmod a+x ~/repo # 赋予执行权限
+          sudo mv ~/repo /usr/local/bin/repo # 将repo工具移动到PATH路径下
 
       - name: Initialize repo and sync # 步骤名称：初始化repo并同步代码
         run: | # 执行多行shell命令
