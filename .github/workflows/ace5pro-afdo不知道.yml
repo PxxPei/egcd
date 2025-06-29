@@ -81,7 +81,7 @@ jobs:
         uses: actions/cache@v4
         with:
          path: /home/runner/.ccache
-         key: ${{ runner.os }}-${{ github.repository }}-v2
+         key: ${{ runner.os }}-${{ github.repository }}-v3
          restore-keys: |
           ${{ runner.os }}-${{ github.repository }}-
           ${{ runner.os }}-
