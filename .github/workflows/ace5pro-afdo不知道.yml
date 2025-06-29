@@ -241,6 +241,7 @@ jobs:
           echo "CONFIG_TCP_CONG_WESTWOOD=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_HTCP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_BBR3=y" >> ./common/arch/arm64/configs/gki_defconfig #启用 BBR3 TCP拥塞控制算法
+          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_INET=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NET_RX_BUSY_POLL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NET_RX_BUSY_READ=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -291,6 +292,7 @@ jobs:
          cd kernel_workspace/kernel_platform
          echo "CONFIG_LTO_CLANG=y" >> ./common/arch/arm64/configs/gki_defconfig
          echo "CONFIG_LTO_CLANG_THIN=y" >> ./common/arch/arm64/configs/gki_defconfig
+         echo "CONFIG_LTO_POLLY=y" >> ./common/arch/arm64/configs/gki_defconfig
          sed -i 's/check_defconfig//' ./common/build.config.gki
          cd common
          git add -A && git commit -a -m "BUILD Kernel with LTO enabled"
