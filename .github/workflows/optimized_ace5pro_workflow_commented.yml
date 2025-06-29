@@ -306,82 +306,74 @@ jobs: # 定义工作流中的作业
           git add -A && git commit -a -m "BUILD Kernel with LTO enabled" # 提交内核构建相关的修改
 
       # 6. 内核编译与打包
-      - name: Build Kernel # 步骤名称：构建内核
-        run: | # 执行多行shell命令
-          cd kernel_workspace/kernel_platform # 进入内核平台目录
-          # 配置内核编译选项
-          make O=out ARCH=arm64 gki_defconfig
-          # 编译Image.gz和dtb.img
-          make O=out ARCH=arm64 Image.gz dtb.img -j$(nproc --all)
-          # 编译dtbo.img
-          make O=out ARCH=arm64 dtbo.img -j$(nproc --all)
-          
-          # 检查编译产物是否存在及大小
-          echo "检查编译产物:"
-          ls -lh out/arch/arm64/boot/Image.gz
-          ls -lh out/arch/arm64/boot/dtb.img
-          ls -lh out/arch/arm64/boot/dtbo.img
+      - name: Build Kernel
+        run: |
+         # 加入 clang 到 PATH
+         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+         # 加入 ccache 到 PATH
+         export PATH="/usr/lib/ccache:$PATH" 
 
-      - name: Build Anykernel3 Zip # 步骤名称：构建Anykernel3刷机包
-        run: | # 执行多行shell命令
-          cd kernel_workspace # 进入内核工作目录
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git # 克隆AnyKernel3仓库
-          # 复制编译好的内核镜像和设备树文件到AnyKernel3目录
-          cp kernel_platform/out/arch/arm64/boot/Image.gz AnyKernel3/
-          cp kernel_platform/out/arch/arm64/boot/dtb.img AnyKernel3/
-          cp kernel_platform/out/arch/arm64/boot/dtbo.img AnyKernel3/
-          
-          # 修改 Anykernel3 配置
-          cd AnyKernel3 # 进入AnyKernel3目录
-          # 更新内核字符串，包含自定义后缀
-          sed -i "s/kernel.string=.*/kernel.string=OnePlus Ace 5 Pro Kernel by GitHub Actions @abogki383916444${{ inputs.local_version }}/" anykernel.sh
-          # 禁用设备检查
-          sed -i "s/do.devicecheck=1/do.devicecheck=0/" anykernel.sh
-          # 禁用模块安装
-          sed -i "s/do.modules=1/do.modules=0/" anykernel.sh
-          # 禁用systemless模式
-          sed -i "s/do.systemless=1/do.systemless=0/" anykernel.sh
-          # 禁用清理操作
-          sed -i "s/do.cleanup=1/do.cleanup=0/" anykernel.sh
-          # 禁用bootheader修补
-          sed -i "s/do.patchbootheaders=1/do.patchbootheaders=0/" anykernel.sh
-          # 启用slot更新
-          sed -i "s/is_slot_update=0/is_slot_update=1/" anykernel.sh
-          
-          # 添加内核版本信息到anykernel.sh
-          echo "kernel.version=${{ inputs.KERNEL_VERSION }}" >> anykernel.sh
-          echo "kernel.name=${{ inputs.KERNEL_NAME }}" >> anykernel.sh
-          echo "kernel.time=\"${{ inputs.kernel_time }}\"" >> anykernel.sh
-          
-          # 打包 Anykernel3 为zip文件
-          zip -r9 "OnePlus_Ace5_Pro_Kernel-${{ inputs.local_version }}.zip" * # 创建刷机包
-          
-          # 移动打包好的zip文件到上一级目录，方便上传
-          mv "OnePlus_Ace5_Pro_Kernel-${{ inputs.local_version }}.zip" ..
+         # 设置固定内核构建时间
+         export KERNEL_TIME="${{ github.event.inputs.kernel_time }}"
+         export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
+         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
+         export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
+         if [ ! -f "$AFDO_PROFILE" ]; then
+           echo "Error: AFDO profile not found at $AFDO_PROFILE"
+         exit 1
+         fi
 
-      # 7. 上传产物与清理
-      - name: Upload kernel zip # 步骤名称：上传内核刷机包
-        uses: actions/upload-artifact@v4 # 使用GitHub Actions官方上传产物Action
-        with: # Action的输入参数
-          name: OnePlus_Ace5_Pro_Kernel # 产物名称
-          path: kernel_workspace/OnePlus_Ace5_Pro_Kernel-${{ inputs.local_version }}.zip # 产物路径
+         # 打印验证
+         echo "KERNEL_TIME = $KERNEL_TIME"
+         echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+         echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
 
-      - name: Delete workflow runs # 步骤名称：删除旧的工作流运行记录
-        uses: Mattraks/delete-workflow-runs@v2 # 使用第三方Action删除工作流运行记录
-        with: # Action的输入参数
-          token: ${{ secrets.GITHUB_TOKEN }} # GitHub Token，用于认证
-          repository: ${{ github.repository }} # 仓库名称
-          retain_days: 1 # 保留最近1天的工作流运行记录
-          keep_minimum_runs: 6 # 至少保留6个工作流运行记录
+         # 设置一些通用参数（便于后续维护）
+         export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE -O2"
+         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
+         RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
+         PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
+         LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
 
-      - name: Clean up runner # 步骤名称：清理Runner空间
-        run: | # 执行多行shell命令
-          df -h # 显示磁盘使用情况
-          sudo rm -rf /usr/share/dotnet # 移除.NET SDK
-          sudo rm -rf /usr/local/lib/android # 移除Android SDK
-          sudo rm -rf /opt/ghc # 移除Haskell GHC
-          sudo rm -rf /usr/local/share/boost # 移除Boost库
-          sudo rm -rf $AGENT_TOOLSDIRECTORY # 移除Agent工具目录
-          df -h # 再次显示磁盘使用情况，确认清理效果
+         # 进入源码目录
+         cd kernel_workspace/kernel_platform/common
+
+         # 执行 defconfig
+         make -j$(nproc) $MAKE_ARGS gki_defconfig
+
+         # 编译全部目标
+         make -j$(nproc) $MAKE_ARGS all
+
+         # 创建输出目录并复制 Image
+         mkdir -p ../dist
+         cp out/arch/arm64/boot/Image ../dist/
+
+      - name: 验证内核构建时间
+        run: |
+         strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC"
+
+      - name: Make AnyKernel3 patch (optional)
+        if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }}
+        run: |
+          cd kernel_workspace/kernel_platform/dist
+          curl -LO https://github.com/ShirkNeko/SukiSU_KernelPatch_patch/releases/download/0.11-beta/patch_linux
+          chmod +x patch_linux
+          ./patch_linux
+          rm -f Image
+          mv oImage Image
+
+      - name: Prepare AnyKernel3 package
+        run: |
+          cd kernel_workspace/kernel_platform/dist
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
+          rm -rf AnyKernel3/.git
+          rm -f AnyKernel3/push.sh
+          cp Image AnyKernel3/
+
+      - name: Upload AnyKernel3 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyKernel3_oneplus_ace5pro_${{ env.KSUVER }}_sukisu
+          path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
 
 
