@@ -1,15 +1,7 @@
-name: OnePlus SM8750 Build SuKiSu SUSFS
+name: ace5pro加入kpm可选(主工作流)
 on:
   workflow_dispatch:
     inputs:
-      boot:
-        type: choice
-        description: "选择修补boot方法"
-        required: true
-        default: boot1
-        options:
-          - boot1
-          - boot2
       CPU:
         description: "分支"
         required: true
@@ -18,10 +10,6 @@ on:
         description: "配置文件"
         required: true
         default: 'oneplus_ace5_pro'
-      CPUD:
-        description: "处理器代号"
-        required: true
-        default: 'sun'
       ANDROID_VERSION:
         description: "内核安卓版本"
         required: true
@@ -34,24 +22,31 @@ on:
         description: "修改内核名称"
         required: true
         default: '-android15-8-g013ec21bba94-abogki383916444'
+      ENABLE_KPM:
+        description: "启用kpm"
+        required: false
+        default: false
+        type: boolean
       local_version:
         description: '输入内核后缀名（如-v8）'
         required: false
         default: '-4k'
         type: string
-      KPM:
-        type: boolean
-        description: "是否启用KPM"
-        required: true
+      remove_default_4k:
+        description: '是否删除默认的 -4k 后缀？（勾选则删除）'
+        required: false
         default: false
+        type: boolean
+      kernel_time:
+        description: '内核构建时间（UTC 时间字符串，例如 "Tue Dec 17 23:36:49 UTC 2024"）'
+        required: false
+        default: 'Tue Dec 17 23:36:49 UTC 2024'
+        type: string
       ENABLE_LTO:
         description: '启用 LTO'
         required: false
         default: false
         type: boolean
-      
-  
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -74,34 +69,40 @@ jobs:
       - name: Configure Git
         run: |
          git config --global user.name "build"
-         git config --global user.email "3620603668@qq.com"
+         git config --global user.email "2106456897@qq.com"
 
-      # 1. 安装构建依赖（包括 ccache）
-      - name: Install Dependencies
-        run: |
-         sudo apt-get update
-         sudo apt-get install -y python3 git curl ccache libelf-dev
+      # 1. 拉取仓库  
+      - name: Checkout  
+        uses: actions/checkout@v4  
 
-      # 2. 恢复 ccache 缓存（按分支区分）
+      # 2. 安装构建依赖（包括 ccache）  
+      - name: Install Dependencies  
+        run: |  
+         sudo apt-get update  
+         sudo apt-get install -y python3 git curl ccache libelf-dev  
+
+      # 3. 恢复 ccache 缓存  
       - name: Restore ccache
         uses: actions/cache@v3
         with:
          path: /home/runner/.ccache
-         key: ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-v3
+         key: ${{ runner.os }}-${{ github.repository }}-v2
          restore-keys: |
-          ${{ runner.os }}-${{ github.repository }}-ccache-${{ github.workflow }}-
           ${{ runner.os }}-${{ github.repository }}-
           ${{ runner.os }}-
+          ccache-
 
-      # 3. 设置 ccache 环境变量
-      - name: Setup ccache environment
-        run: |
-         echo "CCACHE_DIR=/home/runner/.ccache" >> $GITHUB_ENV
-         echo "CCACHE_MAXSIZE=8G" >> $GITHUB_ENV
-         echo "CCACHE_COMPILERCHECK=%compiler% -dumpmachine; %compiler% -dumpversion" >> $GITHUB_ENV
-         echo "CCACHE_NOHASHDIR=true" >> $GITHUB_ENV
-         echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV
-         echo "/usr/lib/ccache" >> $GITHUB_PATH  # 将 /usr/lib/ccache 添加到 PAT
+      # 4. 设置 ccache 环境变量  
+      - name: Setup ccache environment  
+        run: |  
+         echo "CCACHE_DIR=/home/runner/.ccache" >> $GITHUB_ENV  
+         echo "CCACHE_MAXSIZE=8G" >> $GITHUB_ENV  
+         echo "CCACHE_COMPILERCHECK=%compiler% -dumpmachine; %compiler% -dumpversion" >> $GITHUB_ENV  
+         echo "CCACHE_NOHASHDIR=true" >> $GITHUB_ENV  
+         echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV  
+         echo "CCACHE_BASEDIR=${{ github.workspace }}" >> $GITHUB_ENV  
+         echo "CCACHE_LOGFILE=${{ github.workspace }}/ccache.log" >> $GITHUB_ENV  
+         echo "/usr/lib/ccache" >> $GITHUB_PATH  
          
       - name: Show ccache stats
         run: |
@@ -130,50 +131,59 @@ jobs:
          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
          export KSU_VERSION=$KSU_VERSION
          sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+         KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10700)
+         echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+         export KSU_VERSION=$KSU_VERSION
 
-      - name: Set up susfs
+      - name: Set up SUSFS & apply patches
         run: |
-           cd kernel_workspace
-           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}
-           git clone https://github.com/ExmikoN/SukiSU_patch.git
-           cd kernel_platform        
-           cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch ./common/
-           cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
-           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
-           #lz4k
-           cp -r ../SukiSU_patch/other/lz4k/include/linux/* ./common/include/linux
-           cp -r ../SukiSU_patch/other/lz4k/lib/* ./common/lib
-           cp -r ../SukiSU_patch/other/lz4k/crypto/* ./common/crypto
-           # Apply patches
-           cd ./common
-           sed -i 's/-32,12 +32,38/-32,11 +32,37/g' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch
-           sed -i '/#include <trace\/hooks\/fs.h>/d' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch
-           patch -p1 < 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}.patch || true
-           cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
-           patch -p1 -F 3 < syscall_hooks.patch
-           echo "完成"
-           
-      - name: Apply Hide Stuff Patches
-        run: |
-          cd kernel_workspace/kernel_platform/common
-          cp ../../SukiSU_patch/69_hide_stuff.patch ./
-          echo "正在打隐藏应用补丁"
-          patch -p1 -F 3 < 69_hide_stuff.patch
-          echo "隐藏应用_patch完成"
-          
+         set -e
+
+         cd kernel_workspace
+         git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}
+         cd susfs4ksu
+         git reset --hard 09fec8aa1f39807788c526dd84429f6d92b805ae
+         cd ../
+         git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
+         git clone https://$TOKEN@github.com/egcd521/111.git
+         cd kernel_platform
+         cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch ./common/ || true
+         mkdir -p ./common/fs ./common/include/linux ./common/lib ./common/crypto
+         cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
+         cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto || true
+         cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/ || true
+         cp ../111/boot.patch ./common/
+         cd ./common
+         PATCH_FILE=50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch
+         if [[ -f "$PATCH_FILE" ]]; then
+         sed -i 's/-32,12 +32,38/-32,11 +32,37/g' "$PATCH_FILE"
+         sed -i '/#include <trace\/hooks\/fs.h>/d' "$PATCH_FILE"
+         patch -p1 < "$PATCH_FILE" || true
+         fi
+         cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
+         patch -p1 -F 3 < syscall_hooks.patch || true
+         patch -s -p1 -F 3 < boot.patch
+         echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
+
       - name: Apply lz4kd Patches
         run: |
-          cd kernel_workspace/kernel_platform/common
-          cp ../../SukiSU_patch/other/lz4k_patch/${{ github.event.inputs.KERNEL_VERSION }}/lz4kd.patch ./
-          patch -p1 -F 3 < lz4kd.patch || true
-           
+         set -e
+         cd kernel_workspace/kernel_platform/common
+         PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_VERSION }}/lz4kd.patch
+         if [[ -f "$PATCH_FILE" ]]; then
+         cp "$PATCH_FILE" ./lz4kd.patch
+         patch -p1 -F 3 < lz4kd.patch || true
+         else
+         echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
+         fi
+
       - name: Add SUSFS Configuration Settings
         run: |
           cd kernel_workspace/kernel_platform
           echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
-          if [ "${{ github.event.inputs.KPM }}" = "true" ]; then
-          echo "CONFIG_KPM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          fi
           # Add VFS configuration settings
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_MANUAL_HOOK=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -204,6 +214,15 @@ jobs:
           sed -i 's/check_defconfig//' ./common/build.config.gki
           cd common
           git add -A && git commit -a -m "BUILD Kernel"
+          
+      - name: 启用kpm
+        if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }}
+        run: |
+         cd kernel_workspace/kernel_platform
+         echo "CONFIG_KPM=y" >> ./common/arch/arm64/configs/gki_defconfig
+         sudo sed -i 's/check_defconfig//' ./common/build.config.gki
+         cd common
+         git add -A && git commit -a -m "BUILD Kernel"
 
       - name: 启用LTO
         if: ${{ fromJSON(github.event.inputs.ENABLE_LTO) }}
@@ -214,7 +233,6 @@ jobs:
          sudo sed -i 's/check_defconfig//' ./common/build.config.gki
          cd common
          git add -A && git commit -a -m "BUILD Kernel with LTO enabled"
-
 
       - name: Add make name
         run: |
@@ -227,43 +245,29 @@ jobs:
          cd kernel_workspace/kernel_platform
          echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.local_version }}"' >> ./common/arch/arm64/configs/gki_defconfig
 
-
-      - name: boot1
+      - name: 删除 CONFIG_LOCALVERSION 中的 -4k 后缀（如果勾选）
+        if: ${{ fromJSON(github.event.inputs.remove_default_4k) }}
         run: |
-            if [ "${{ github.event.inputs.boot }}" = "boot1" ]; then
-            cd kernel_workspace/kernel_platform/common
-            sed -i '1iobj-y += hmbird_patch.o' drivers/Makefile
-            wget https://github.com/3620603660/patch/raw/main/hmbird_patch.patch
-            echo "正在打OGKI转换GKI补丁"
-            patch -p1 -F 3 < hmbird_patch.patch
-            echo "OGKI转换GKI patch完成"
-            fi
-            
-        
-      - name: boot2
-        run: |
-            if [ "${{ github.event.inputs.boot }}" = "boot2" ]; then
-            cd kernel_workspace/kernel_platform/common
-            wget https://github.com/3620603660/patch/raw/main/property.patch
-            echo "正在打OGKI转换GKI补丁"
-            patch -p1 -F 3 < property.patch
-            echo "OGKI转换GKI patch完成"
-            fi
-                   
-      - name: Add sched_ext
+         cd kernel_workspace/kernel_platform
+         sed -i 's/-4k//' ./common/arch/arm64/configs/gki_defconfig
+    
+      - name: 拉取并集成 sched_ext 调度器
         run: |
          cd kernel_workspace/kernel_platform/
-         git clone https://github.com/3620603660/sched_ext.git
+         git clone https://github.com/egcd123/sched_ext.git
          cp -r ./sched_ext/* ./common/kernel/sched
          rm -rf ./sched_ext/.git
 
-
+      - name: 拉取afdo
+        run: |
+          cd kernel_workspace/kernel_platform/
+          git clone https://github.com/egcd521/afdo.git
+            
       - name: Set build timestamp
         run: |         
-         export SOURCE_DATE_EPOCH=$(date -d "2024-12-17 23:36:49 UTC" +%s)
+         export SOURCE_DATE_EPOCH=$(date -d "Tue Dec 17 23:36:49 UTC 2024" +%s)
          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
-
-
+   
       - name: Build Kernel
         run: |
          # 加入 clang 到 PATH
@@ -272,21 +276,27 @@ jobs:
          export PATH="/usr/lib/ccache:$PATH" 
 
          # 设置固定内核构建时间
-         export KERNEL_TIME="2024-12-17 23:36:49 UTC"
+         export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
          export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
+         # 设置 AFDO 配置文件路径
+         export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
+         if [ ! -f "$AFDO_PROFILE" ]; then
+           echo "Error: AFDO profile not found at $AFDO_PROFILE"
+         exit 1
+         fi
 
          # 打印验证
          echo "KERNEL_TIME = $KERNEL_TIME"
          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+         echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
 
          # 设置一些通用参数（便于后续维护）
+         export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
          RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
          PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
-         LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS=-Wno-error \
-         SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
-         echo "Using SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH"
+         LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
 
          # 进入源码目录
          cd kernel_workspace/kernel_platform/common
@@ -295,11 +305,7 @@ jobs:
          make -j$(nproc) $MAKE_ARGS gki_defconfig
 
          # 编译全部目标
-         KBUILD_CFLAGS='-O2' KCFLAGS='-Wno-error' make -j$(nproc) $MAKE_ARGS all
-         echo "Checking compiled optimization level:"
-         find out/ -name '*.cmd' | xargs grep -- '-O' | grep -v 'O2' | head
-         echo "Checking if ThinLTO was applied:"
-         find out/ -name '*.cmd' | xargs grep -E '\-flto(=thin)?' | head
+         make -j$(nproc) $MAKE_ARGS all
 
          # 创建输出目录并复制 Image
          mkdir -p ../dist
@@ -309,31 +315,26 @@ jobs:
         run: |
          strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC"
 
-         
-      - name: Make AnyKernel3
+      - name: Make AnyKernel3 patch (optional)
+        if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }}
         run: |
-         cd kernel_workspace/kernel_platform/dist/
-         curl -LO https://github.com/ShirkNeko/SukiSU_KernelPatch_patch/releases/download/0.11-beta/patch_linux
-         chmod +x patch_linux
-         ./patch_linux
-         rm -f Image
-         mv oImage Image
-         
-      - name: Make AnyKernel3
-        run: |
-         git clone https://github.com/3620603660/AnyKernel3.git --depth=1      
-         rm -rf ./AnyKernel3/.git
-         rm -rf ./AnyKernel3/push.sh
-         cp kernel_workspace/kernel_platform/dist/Image ./AnyKernel3/
+          cd kernel_workspace/kernel_platform/dist
+          curl -LO https://github.com/ShirkNeko/SukiSU_KernelPatch_patch/releases/download/0.11-beta/patch_linux
+          chmod +x patch_linux
+          ./patch_linux
+          rm -f Image
+          mv oImage Image
 
-      - name: Upload AnyKernel3
+      - name: Prepare AnyKernel3 package
+        run: |
+          cd kernel_workspace/kernel_platform/dist
+          git clone https://github.com/egcd123/AnyKernel3.git AnyKernel3 --depth=1
+          rm -rf AnyKernel3/.git
+          rm -f AnyKernel3/push.sh
+          cp Image AnyKernel3/
+
+      - name: Upload AnyKernel3 artifact
         uses: actions/upload-artifact@v4
         with:
-         name: SuKiSu_${{ env.KSUVER }}_${{ github.event.inputs.FEIL }}
-         path: ./AnyKernel3/*
-         
-      - name: Upload Image
-        uses: actions/upload-artifact@v4
-        with:
-         name: Image_SuKiSu_${{ env.KSUVER }}_${{ github.event.inputs.FEIL }}
-         path: kernel_workspace/kernel_platform/dist/Image
+          name: AnyKernel3_oneplus_ace5pro_${{ env.KSUVER }}_sukisu
+          path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
