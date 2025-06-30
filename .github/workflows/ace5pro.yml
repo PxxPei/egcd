@@ -160,8 +160,6 @@ jobs:
          patch -s -p1 -F 3 < 1.patch
          echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
    
-          echo "✅ BBR3 patch applied"
-
       - name: 🔧 Update compression algorithms (更新压缩算法)
         run: |
           cd kernel_workspace/kernel_platform/common
@@ -233,7 +231,6 @@ jobs:
           echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
           echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
-         # echo "CONFIG_TCP_CONG_BBR3=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR3 TCP 拥塞控制算法
           echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
           echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
