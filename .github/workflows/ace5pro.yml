@@ -179,7 +179,8 @@ jobs:
           cd kernel_workspace/kernel_platform/common
           
           # 更新LZ4实现
-          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_decompress.c
+          curl -sSLO
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_decompress.c
           curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4defs.h
           curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_compress.c
           curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4hc_compress.c
@@ -244,6 +245,7 @@ jobs:
 
           echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
+          echo "CONFIG_TCP_CONG_BBR=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_BBR3=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR3 TCP 拥塞控制算法
           echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
           echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
