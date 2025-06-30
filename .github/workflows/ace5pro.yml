@@ -116,7 +116,7 @@ jobs:
          repo --trace sync -c -j$(nproc --all) --no-tags
          rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
-         
+
       - name: Set up SukiSU
         run: |
          cd kernel_workspace/kernel_platform
@@ -335,7 +335,6 @@ jobs:
          # 打印验证
          echo "KERNEL_TIME = $KERNEL_TIME"
          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
-         echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
 
          # 设置一些通用参数（便于后续维护）
          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
@@ -346,11 +345,9 @@ jobs:
          cd kernel_workspace/kernel_platform/common
          make -j$(nproc) $MAKE_ARGS gki_defconfig
          make -j$(nproc) $MAKE_ARGS all
-         make -C tools/perf ARCH=arm64 LLVM=1 CC=clang NO_LIBTRACEEVENT=1
-         mkdir -p ../dist/AnyKernel3 ../dist/perf
          cp out/arch/arm64/boot/Image ../dist/
+         cp out/vmlinux ../dist/
          cp -r ../../AnyKernel3/* ../dist/AnyKernel3/ 
-         cp tools/perf/perf ../dist/perf/
 
       - name: 验证内核构建时间
         run: |
@@ -379,3 +376,8 @@ jobs:
         with:
           name: AnyKernel3_oneplus_ace5pro_${{ env.KSUVER }}_sukisu
           path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
+      - name: Upload vmlinx binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: vmlinux
+          path: kernel_workspace/kernel_platform/dist/vmlinux
