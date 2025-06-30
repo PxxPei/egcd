@@ -348,6 +348,20 @@ jobs:
          cp out/arch/arm64/boot/Image ../dist/
          cp out/vmlinux ../dist/
          cp -r ../../AnyKernel3/* ../dist/AnyKernel3/ 
+         cp out/vmlinux ../dist/
+
+      - name: Fix asm header symlink for perf (arm64)
+        run: |
+         cd kernel_workspace/kernel_platform/common/tools/include
+         rm -f asm
+         ln -s ../arch/arm64/include/asm asm
+
+      - name: Build perf
+        run: |
+         cd kernel_workspace/kernel_platform/common
+         make -C tools/perf ARCH=arm64 LLVM=1 CC=clang \
+         NO_LIBTRACEEVENT=1 NO_LIBUNWIND=1 NO_LIBDW_DWARF_UNWIND=1 \
+         NO_LIBELF=1 NO_PERL=1 NO_SLANG=1
 
       - name: 验证内核构建时间
         run: |
@@ -381,3 +395,9 @@ jobs:
         with:
           name: vmlinux
           path: kernel_workspace/kernel_platform/dist/vmlinux
+
+      - name: Upload perf binary
+        uses: actions/upload-artifact@v4
+        with:
+         name: perf-tool
+         path: kernel_workspace/kernel_platform/common/tools/perf/perf
