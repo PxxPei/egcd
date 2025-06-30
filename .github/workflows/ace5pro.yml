@@ -159,19 +159,7 @@ jobs:
          patch -p1 -F 3 < syscall_hooks.patch || true
          patch -s -p1 -F 3 < 1.patch
          echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
-
-      - name: Apply BBR3 Patch
-        run: |
-          set -e
-          cd kernel_workspace/kernel_platform/common
-          # 下载 BBR3 补丁文件
-          curl -sSLO https://raw.githubusercontent.com/CachyOS/kernel-patches/master/6.6/0001-bbr3.patch
-          
-          # 应用 BBR3 补丁
-          # -p1 表示忽略补丁文件中路径的第一个目录层级
-          # -F 3 表示当补丁无法完全应用时 ，尝试最多 3 次模糊匹配
-          patch -p1 -F 3 < 0001-bbr3.patch || true
-          
+   
           echo "✅ BBR3 patch applied"
 
       - name: 🔧 Update compression algorithms (更新压缩算法)
@@ -244,14 +232,14 @@ jobs:
 
           echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
-          echo "CONFIG_TCP_CONG_BBR=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_BBR3=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR3 TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
+         # echo "CONFIG_TCP_CONG_BBR3=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR3 TCP 拥塞控制算法
           echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
           echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
-          echo "CONFIG_DEFAULT_TCP_CONG=bbr3" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
 
           # 启用 ZRAM 及其压缩选项
           echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM
