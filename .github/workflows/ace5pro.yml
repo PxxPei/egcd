@@ -253,10 +253,10 @@ jobs:
 
           echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/configs/gki_defconfig
-# 确保 cpufreq 框架和 schedutil governor 启用
+          # 确保 cpufreq 框架和 schedutil governor 启用
           echo "CONFIG_CPUFREQ=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_CPUFREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
-# 确保 devfreq 框架启用 (用于 GPU 等)
+          # 确保 devfreq 框架启用 (用于 GPU 等)
           echo "CONFIG_DEVFREQ_GOV_SIMPLE_ONDEMAND=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_DEVFREQ_GOV_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_DEVFREQ_GOV_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
