@@ -40,8 +40,6 @@ jobs:
       - name: Generate kernel.afdo
         run: |
           ./create_llvm_prof --binary=vmlinux --profile=perf.data --out=kernel.afdo
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload kernel.afdo
         uses: actions/upload-artifact@v4
