@@ -244,7 +244,8 @@ jobs:
           CONFIG_CRYPTO_842=y
 
           # 测试
-          CONFIG_PERF_EVENTS=y        
+          CONFIG_DEBUG_INFO＝y
+          CONFIG_PERF_EVENTS=y
           CONFIG_FRAME_POINTER=y
           EOF
           # 移除构建流程中的 check_defconfig 校验
