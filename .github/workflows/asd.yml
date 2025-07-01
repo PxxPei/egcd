@@ -140,24 +140,24 @@ jobs:
             export PATH="${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/clang/host/linux-x86/clang-r450784d/bin:${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:${PATH}"
             export CROSS_COMPILE_ARM64="${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-"
             echo "Using toolchain from repo prebuilts."
-          else
+            else
             # 查找 NDK 的常见路径
             # 尝试使用 ANDROID_NDK_HOME 环境变量
             # 或者在 /usr/local/lib/android/sdk/ndk/ 或 /opt/android/sdk/ndk/ 下查找
             NDK_ROOT=""
-if [ -n "${ANDROID_NDK_HOME}" ]; then
+            if [ -n "${ANDROID_NDK_HOME}" ]; then
             NDK_ROOT="${ANDROID_NDK_HOME}"
-elif [ -d "/usr/local/lib/android/sdk/ndk/" ]; then
+            elif [ -d "/usr/local/lib/android/sdk/ndk/" ]; then
             NDK_ROOT=$(find /usr/local/lib/android/sdk/ndk/ -maxdepth 1 -type d -name "*-*" | head -n 1)
-elif [ -d "/opt/android/sdk/ndk/" ]; then
+            elif [ -d "/opt/android/sdk/ndk/" ]; then
             NDK_ROOT=$(find /opt/android/sdk/ndk/ -maxdepth 1 -type d -name "*-*" | head -n 1)
-fi
+            fi
 
             if [ -n "${NDK_ROOT}" ]; then
             export PATH="${NDK_ROOT}/toolchains/llvm/prebuilt/linux-x86_64/bin:${NDK_ROOT}/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin:${PATH}"
             export CROSS_COMPILE_ARM64="${NDK_ROOT}/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-"
             echo "Using NDK toolchain from: ${NDK_ROOT}"
-else
+            else
             echo "Error: NDK toolchain not found in common locations."
             exit 1
            fi
