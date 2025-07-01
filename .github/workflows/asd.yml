@@ -32,10 +32,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install tools
+      - name: Install tools and clean apt cache
         run: |
           sudo apt update
           sudo apt install -y curl git build-essential libncurses-dev bison flex libssl-dev libelf-dev
+          sudo apt clean # 清理 apt 缓存
+          sudo rm -rf /var/lib/apt/lists/* # 移除 apt 列表，释放更多空间
+          df -h # 打印磁盘使用情况，方便调试
 
       - name: Download and install repo tool
         run: |
@@ -49,6 +52,7 @@ jobs:
           mkdir kernel_workspace && cd kernel_workspace
           repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
           repo sync -c -j$(nproc --all  ) --no-tags
+          df -h # 再次打印磁盘使用情况，查看 repo sync 后的空间占用
 
       - name: Remove protected exports
         run: |
@@ -57,7 +61,6 @@ jobs:
 
       - name: Set up build environment and compile kernel
         run: |
-          # 定义内核源码根目录
           KERNEL_SRC_ROOT="${GITHUB_WORKSPACE}/kernel_workspace/kernel_platform/common"
           cd ${KERNEL_SRC_ROOT}
 
@@ -67,8 +70,6 @@ jobs:
           ls -la
 
           # --- 工具链设置 ---
-          # 优先使用 repo 同步的 prebuilts
-          # 如果没有，尝试使用 NDK
           TOOLCHAIN_BASE_PATH=""
           if [ -d "${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/clang/host/linux-x86/clang-r450784d/bin" ] && \
              [ -d "${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin" ]; then
@@ -89,12 +90,10 @@ jobs:
 
           export ARCH=arm64
           export CROSS_COMPILE="${CROSS_COMPILE_ARM64}"
-          export CLANG_TRIPLE="aarch64-linux-gnu-" # GKI 通常使用 clang，并设置 CLANG_TRIPLE
+          export CLANG_TRIPLE="aarch64-linux-gnu-"
 
           # --- GKI 内核构建 ---
-          # BUILD_CONFIG_NAME 根据您的 build.config 文件选择合适的名称
-          # 假设是 gki.aarch64，您可能需要根据 FEIL 和 CPU 动态生成
-          BUILD_CONFIG_NAME="gki.aarch64" # <--- 根据您的 build.config 文件选择合适的名称
+          BUILD_CONFIG_NAME="gki.aarch64"
 
           if [ ! -f "build.config.${BUILD_CONFIG_NAME}" ]; then
             echo "Error: build.config.${BUILD_CONFIG_NAME} not found. Please check your FEIL and CPU inputs or the build.config files."
@@ -102,36 +101,24 @@ jobs:
             exit 1
           fi
 
-          # 定义内核编译输出目录，build.sh 会使用 OUT_DIR
-          export OUT_DIR="${GITHUB_WORKSPACE}/kernel_workspace/out" # build.sh 默认输出到 REPO_ROOT/out/BRANCH
-          export KERNEL_OUT="${OUT_DIR}/common/obj/KERNEL_OBJ" # 明确 perf 编译所需的 KERNEL_OBJ 路径
+          export OUT_DIR="${GITHUB_WORKSPACE}/kernel_workspace/out"
+          export KERNEL_OUT="${OUT_DIR}/common/obj/KERNEL_OBJ"
 
           echo "Compiling kernel with BUILD_CONFIG=${BUILD_CONFIG_NAME} and OUT_DIR=${OUT_DIR}"
-          # 执行 GKI 内核构建脚本
-          # build.sh 内部会处理 clean, defconfig, make 等步骤
-          build/build.sh ${BUILD_CONFIG_NAME} -j$(nproc) # <--- 使用 GKI 构建脚本并并行编译
+          build/build.sh ${BUILD_CONFIG_NAME} -j$(nproc)
 
           # --- 编译 perf binary ---
           echo "Compiling perf binary..."
-          # perf 编译通常在 KERNEL_SRC_ROOT/tools/perf 目录下进行
-          # 确保 KERNEL_OUT 环境变量已设置正确
           make -C tools/perf O=${KERNEL_OUT} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 
       - name: Prepare perf for archiving
         run: |
           mkdir -p perf_package
-          # perf 编译的最终位置通常在 KERNEL_OUT/tools/perf/perf 或 KERNEL_OUT/usr/bin/perf
-          # 使用 KERNEL_OUT 变量来查找
-          KERNEL_OUT_PATH="${GITHUB_WORKSPACE}/kernel_workspace/out/common/obj/KERNEL_OBJ" # 明确 KERNEL_OUT 的绝对路径
+          KERNEL_OUT_PATH="${GITHUB_WORKSPACE}/kernel_workspace/out/common/obj/KERNEL_OBJ"
 
           cp "${KERNEL_OUT_PATH}/tools/perf/perf" perf_package/perf || \
           cp "${KERNEL_OUT_PATH}/usr/bin/perf" perf_package/perf || \
           (echo "Error: perf binary not found in expected locations." && exit 1)
-          echo "perf binary prepared for archiving."
-
-      - name: Create perf archive
-        run: |
-          tar -czvf perf_binary_${{ github.event.inputs.CPUD }}_${{ github.event.inputs.ANDROID_VERSION }}_${{ github.event.inputs.KERNEL_VERSION }}.tar.gz perf_package/
           echo "perf binary prepared for archiving."
 
       - name: Create perf archive
