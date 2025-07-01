@@ -29,27 +29,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download Android source code
-        uses: actions/checkout@v2
-        with:
-          repository: android/platform_manifest
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install repo tool
+      - name: Install tools
         run: |
-         curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
-         chmod a+x ~/repo
-         sudo mv ~/repo /usr/local/bin/repo
+          sudo apt update
+          sudo apt install -y curl git
 
-      - name: Download and compile Android source code
+      - name: Download and install repo tool
+        run: |
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
+          chmod a+x ~/repo
+          sudo mv ~/repo /usr/local/bin/repo
+
+      - name: Initialize and sync repo
         run: |
           repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
-          repo --trace sync -c -j$(nproc --all) --no-tags
-          rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
-          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
-           source build/envsetup.sh
-           lunch aosp_arm-eng
-           make -j$(nproc)
+          repo sync -c -j$(nproc --all) --no-tags
+
+      - name: Remove protected exports
+        run: |
+          rm -rf kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+          rm -rf kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+
+      - name: Compile Android source code
+        run: |
+          source build/envsetup.sh
+          lunch aosp_arm-eng
+          make -j$(nproc)
 
       - name: Install perf binary
         run: |
