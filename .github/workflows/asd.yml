@@ -57,73 +57,89 @@ jobs:
 
       - name: Set up Android build environment and compile kernel
         run: |
-          cd kernel_workspace/kernel_platform
+          KERNEL_SRC_ROOT="kernel_workspace/kernel_platform/common"
+
+          cd ${KERNEL_SRC_ROOT}
 
           echo "Current directory for kernel compilation:"
           pwd
           echo "Listing contents of current directory (should contain Makefile):"
           ls -la
 
-          TOOLCHAIN_PATH=$(pwd)/../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
-          if [ ! -d "$(dirname ${TOOLCHAIN_PATH})" ]; then
-            echo "Error: Cross-compilation toolchain directory not found at $(dirname ${TOOLCHAIN_PATH})"
-            echo "Please ensure your manifest file includes the prebuilts repository and its path is correct."
-            exit 1
+          TOOLCHAIN_BASE_PATH=""
+          if [ -d "../../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin" ]; then
+            TOOLCHAIN_BASE_PATH="$(pwd)/../../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin"
+            echo "Using toolchain from repo prebuilts: ${TOOLCHAIN_BASE_PATH}"
+          else
+            NDK_TOOLCHAIN_PATH=$(find /usr/local/lib/android/sdk/ndk/ -name "aarch64-linux-android-gcc" | head -n 1)
+            if [ -n "${NDK_TOOLCHAIN_PATH}" ]; then
+              TOOLCHAIN_BASE_PATH=$(dirname ${NDK_TOOLCHAIN_PATH})
+              echo "Using NDK toolchain: ${TOOLCHAIN_BASE_PATH}"
+            else
+              echo "Error: Cross-compilation toolchain not found. Please ensure it's synced or installed."
+              exit 1
+            fi
           fi
 
           export ARCH=arm64
-          export CROSS_COMPILE=${TOOLCHAIN_PATH}
-          export KERNEL_OUT=$(pwd)/../out/target/product/generic_arm/obj/KERNEL_OBJ
+          export CROSS_COMPILE="${TOOLCHAIN_BASE_PATH}/aarch64-linux-android-"
+          export KERNEL_OUT=$(pwd)/../../out/target/product/generic_arm/obj/KERNEL_OBJ
 
           make O=${KERNEL_OUT} clean
           make O=${KERNEL_OUT} mrproper
 
-          echo "请根据您的内核源码和配置文件，手动添加内核配置命令，例如：make O=${KERNEL_OUT} defconfig"
-          # make O=${KERNEL_OUT} your_defconfig_here # 替换为实际的 defconfig
+          # 执行 defconfig
+          # gki_defconfig 通常不需要 -j 参数，因为它是配置步骤，不是编译步骤
+          make O=${KERNEL_OUT} gki_defconfig # <--- 修正 defconfig 命令
+
+          # 编译内核 (如果需要编译整个内核，否则可以跳过)
+          make O=${KERNEL_OUT} -j$(nproc)
 
       - name: Compile perf binary
         run: |
-          cd kernel_workspace/kernel_platform
+          KERNEL_SRC_ROOT="kernel_workspace/kernel_platform/common"
+          cd ${KERNEL_SRC_ROOT}
 
-          TOOLCHAIN_PATH=$(pwd)/../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
-          if [ ! -d "$(dirname ${TOOLCHAIN_PATH})" ]; then
-            echo "Error: Cross-compilation toolchain directory not found at $(dirname ${TOOLCHAIN_PATH})"
-            echo "Please ensure your manifest file includes the prebuilts repository and its path is correct."
-            exit 1
+          TOOLCHAIN_BASE_PATH=""
+          if [ -d "../../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin" ]; then
+            TOOLCHAIN_BASE_PATH="$(pwd)/../../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin"
+          else
+            NDK_TOOLCHAIN_PATH=$(find /usr/local/lib/android/sdk/ndk/ -name "aarch64-linux-android-gcc" | head -n 1)
+            if [ -n "${NDK_TOOLCHAIN_PATH}" ]; then
+              TOOLCHAIN_BASE_PATH=$(dirname ${NDK_TOOLCHAIN_PATH})
+            else
+              echo "Error: Cross-compilation toolchain not found. Please ensure it's synced or installed."
+              exit 1
+            fi
           fi
 
           export ARCH=arm64
-          export CROSS_COMPILE=${TOOLCHAIN_PATH}
-          export KERNEL_OUT=$(pwd)/../out/target/product/generic_arm/obj/KERNEL_OBJ
+          export CROSS_COMPILE="${TOOLCHAIN_BASE_PATH}/aarch64-linux-android-"
+          export KERNEL_OUT=$(pwd)/../../out/target/product/generic_arm/obj/KERNEL_OBJ
 
+          # 编译 perf
           make -C tools/perf O=${KERNEL_OUT} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 
-      - name: Prepare perf for archiving # 新增步骤：准备 perf 文件
+      - name: Prepare perf for archiving
         run: |
-          # 创建一个临时目录来存放 perf 文件
           mkdir -p perf_package
-          # 假设编译好的 perf 可执行文件在 kernel_workspace/kernel_platform/tools/perf/perf
-          # 将 perf 复制到临时目录
-          cp kernel_workspace/kernel_platform/tools/perf/perf perf_package/perf
+          cp kernel_workspace/kernel_platform/common/tools/perf/perf perf_package/perf
           echo "perf binary prepared for archiving."
 
-      - name: Create perf archive # 新增步骤：创建 perf 压缩包
+      - name: Create perf archive
         run: |
-          # 使用 tar 命令创建 .tar.gz 压缩包
-          # 压缩包名称可以包含版本信息或日期
           tar -czvf perf_binary_${{ github.event.inputs.CPUD }}_${{ github.event.inputs.ANDROID_VERSION }}_${{ github.event.inputs.KERNEL_VERSION }}.tar.gz perf_package/
           echo "perf archive created."
 
-      - name: Upload perf archive # 新增步骤：上传 perf 压缩包
-        uses: actions/upload-artifact@v4 # 建议使用最新版本的 upload-artifact
+      - name: Upload perf archive
+        uses: actions/upload-artifact@v4
         with:
           name: perf-binary-${{ github.event.inputs.CPUD }}-${{ github.event.inputs.ANDROID_VERSION }}-${{ github.event.inputs.KERNEL_VERSION }}
           path: perf_binary_*.tar.gz
-          retention-days: 7 # 设置产物保留天数，默认为 90 天，可以根据需要调整
+          retention-days: 7
 
-      - name: Verify perf installation (Optional) # 验证步骤，如果不需要可以删除
+      - name: Verify perf installation (Optional)
         run: |
-          # 为了验证，可以解压并运行 perf
           tar -xzvf perf_binary_*.tar.gz
           ./perf_package/perf --version
           ./perf_package/perf list
