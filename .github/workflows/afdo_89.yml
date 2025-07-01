@@ -20,12 +20,12 @@ jobs:
       - name: Clone 3620603660/afdo_89 repo (含 perf.zip)
         run: |
           git clone https://github.com/3620603660/afdo_89.git
-          ls -lh build-afdo/perf.zip
+          ls -lh afdo_89/perf.zip
 
       - name: Unzip perf.zip
         run: |
          unzip afdo_89/perf.zip -d afdo_89
-         ls -lh build-afdo/
+         ls -lh afdo_89/
 
       - name: Download and extract create_llvm_prof binary
         run: |
