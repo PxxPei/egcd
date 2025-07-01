@@ -44,7 +44,7 @@ jobs:
         run: |
           mkdir kernel_workspace && cd kernel_workspace
           repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
-          repo sync -c -j$(nproc --all) --no-tags
+          repo sync -c -j$(nproc --all ) --no-tags
 
       - name: Remove protected exports
         run: |
@@ -53,6 +53,7 @@ jobs:
 
       - name: Compile Android source code
         run: |
+          cd kernel_workspace # 添加这一行，进入源码根目录
           source build/envsetup.sh
           lunch aosp_arm-eng
           make -j$(nproc)
