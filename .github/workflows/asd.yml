@@ -139,6 +139,10 @@ jobs:
              [ -d "${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin" ]; then
             export PATH="${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/clang/host/linux-x86/clang-r450784d/bin:${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:${PATH}"
             export CROSS_COMPILE_ARM64="${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-"
+         # 加入 clang 到 PATH
+         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+         # 加入 ccache 到 PATH
+         export PATH="/usr/lib/ccache:$PATH"
             echo "Using toolchain from repo prebuilts."
             else
             # 查找 NDK 的常见路径
