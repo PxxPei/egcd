@@ -21,7 +21,7 @@ jobs:
 
       - name: Clone afdo_89 repo and extract perf.zip
         run: |
-          curl -L https://github.com/3620603660/afdo_89.git -o perf.zip
+          git clone https://github.com/3620603660/afdo_89.git -o perf.zip
           unzip -o afdo_89/perf.zip -d afdo_89
           ls -lh afdo_89
 
