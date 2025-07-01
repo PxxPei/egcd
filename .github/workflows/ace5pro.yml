@@ -322,12 +322,12 @@ jobs:
    
       - name: Build Kernel
         run: |
-                  # 加入 clang 到 PATH
+         # 加入 clang 到 PATH
          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
          # 加入 ccache 到 PATH
          export PATH="/usr/lib/ccache:$PATH" 
          # 设置固定内核构建时间
-         export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
+         export KERNEL_TIME="12月17日，周二23:36:49 UTC 2024"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
          export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
          # 打印验证
