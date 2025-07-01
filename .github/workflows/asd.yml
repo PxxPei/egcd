@@ -44,10 +44,12 @@ jobs:
       - name: Download and compile Android source code
         run: |
           repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
-          repo sync
-          source build/envsetup.sh
-          lunch aosp_arm-eng
-          make -j$(nproc)
+          repo --trace sync -c -j$(nproc --all) --no-tags
+          rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+           source build/envsetup.sh
+           lunch aosp_arm-eng
+           make -j$(nproc)
 
       - name: Install perf binary
         run: |
