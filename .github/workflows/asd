@@ -1,0 +1,31 @@
+name: Compile perf
+
+on:
+  workflow_dispatch:
+    inputs:
+      ANDROID_URL:
+        description: 'Direct download URL for Android source code'
+        required: true
+
+jobs:
+  compile-perf:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Android source code
+        uses: actions/checkout@v2
+        with:
+          repository: android/platform_manifest
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download and compile Android source code
+        run: |
+          repo init -u ${{ github.event.inputs.ANDROID_URL }}
+          repo sync
+          source build/envsetup.sh
+          lunch aosp_arm-eng
+          make -j$(nproc)
+
+      - name: Install perf binary
+        run: |
+          cp out/target/product/generic_arm/obj/KERNEL_OBJ/usr/bin/perf /usr/bin/perf
