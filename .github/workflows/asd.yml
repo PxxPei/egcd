@@ -28,9 +28,62 @@ jobs:
   compile-perf:
     runs-on: ubuntu-latest
 
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+      TOKEN: ${{ secrets.TOKEN }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 8192
+          temp-reserve-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          
+      - name: Configure Git
+        run: |
+         git config --global user.name "build"
+         git config --global user.email "3620603668@qq.com"
+      # 1. 拉取仓库  
+      - name: Checkout  
+        uses: actions/checkout@v4  
+
+      # 2. 安装构建依赖（包括 ccache）  
+      - name: Install Dependencies  
+        run: |  
+         sudo apt-get update  
+         sudo apt-get install -y python3 git curl ccache libelf-dev
+         
+      # 3. 恢复 ccache 缓存  
+      - name: Restore ccache
+        uses: actions/cache@v3
+        with:
+         path: /home/runner/.ccache
+         key: ${{ runner.os }}-${{ github.repository }}-v上游
+         restore-keys: |
+          ${{ runner.os }}-${{ github.repository }}-
+          ${{ runner.os }}-
+          ccache-
+      # 4. 设置 ccache 环境变量  
+      - name: Setup ccache environment  
+        run: |  
+         echo "CCACHE_DIR=/home/runner/.ccache" >> $GITHUB_ENV  
+         echo "CCACHE_MAXSIZE=8G" >> $GITHUB_ENV  
+         echo "CCACHE_COMPILERCHECK=%compiler% -dumpmachine; %compiler% -dumpversion" >> $GITHUB_ENV  
+         echo "CCACHE_NOHASHDIR=true" >> $GITHUB_ENV  
+         echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV  
+         echo "CCACHE_BASEDIR=${{ github.workspace }}" >> $GITHUB_ENV  
+         echo "CCACHE_LOGFILE=${{ github.workspace }}/ccache.log" >> $GITHUB_ENV  
+         echo "/usr/lib/ccache" >> $GITHUB_PATH  
+         
+      - name: Show ccache stats
+        run: |
+         ccache -s || true
+
 
       - name: Install tools and clean apt cache
         run: |
