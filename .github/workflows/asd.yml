@@ -35,6 +35,12 @@ jobs:
           repository: android/platform_manifest
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install repo tool
+        run: |
+         curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
+         chmod a+x ~/repo
+         sudo mv ~/repo /usr/local/bin/repo
+
       - name: Download and compile Android source code
         run: |
           repo init -u $https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
