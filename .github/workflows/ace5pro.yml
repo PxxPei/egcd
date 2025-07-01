@@ -351,7 +351,7 @@ jobs:
          cp out/arch/arm64/boot/Image ../dist/
          cp out/vmlinux ../dist/
 
-- name: Make AnyKernel3 patch (optional)
+      - name: Make AnyKernel3 patch (optional)
         if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }}
         run: |
           cd kernel_workspace/kernel_platform/dist
