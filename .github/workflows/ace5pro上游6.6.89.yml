@@ -224,6 +224,50 @@ jobs:
           CONFIG_CRYPTO_LZ4K=y
           CONFIG_CRYPTO_LZ4KD=y
           CONFIG_CRYPTO_842=y
+          
+          # 网络调度和 TCP 拥塞控制优化
+          CONFIG_NET_SCHED=y
+          CONFIG_TCP_CONG_ADVANCED=y
+          CONFIG_TCP_CONG_BBR=y
+          CONFIG_NET_SCH_FQ=y
+          CONFIG_TCP_CONG_BIC=n
+          CONFIG_TCP_CONG_CUBIC=n
+          CONFIG_TCP_CONG_WESTWOOD=n
+          CONFIG_TCP_CONG_HTCP=n
+          CONFIG_DEFAULT_TCP_CONG="bbr"
+
+          # ZRAM 及其压缩选项
+          CONFIG_ZRAM=y
+          CONFIG_ZRAM_LZ4_COMPRESS=y
+          CONFIG_ZRAM_LZ4KD_COMPRESS=y
+          CONFIG_ZRAM_ZSTD_COMPRESS=y
+          CONFIG_ZRAM_MULTI_COMP=y
+
+          # CPU 空闲和调度优化
+          CONFIG_CPU_IDLE=y
+          CONFIG_CPU_IDLE_GOV_MENU=y
+          CONFIG_WRITEBACK=y
+          CONFIG_NO_HZ_COMMON=y
+          CONFIG_QCOM_CPUIDLE=y
+          CONFIG_SCHED_EAS=y
+          CONFIG_CPU_ENERGY_PERF_POLICY=y
+          CONFIG_CPUFREQ=y
+          CONFIG_CPUFREQ_GOV_SCHEDUTIL=y
+
+          # Devfreq 框架启用 (用于 GPU 等)
+          CONFIG_DEVFREQ_GOV_SIMPLE_ONDEMAND=y
+          CONFIG_DEVFREQ_GOV_PERFORMANCE=y
+          CONFIG_DEVFREQ_GOV_POWERSAVE=y
+
+          # I/O 调度器优化
+          CONFIG_BLK_MQ_IOSCHED_DEADLINE=y
+          CONFIG_BLK_MQ_IOSCHED_KYBER=y
+          CONFIG_SCHED_EEVDF=y
+          CONFIG_BLK_MQ_IOSCHED_BFQ=y
+          CONFIG_BLK_MQ_IOSCHED_NONE=y
+          CONFIG_DEFAULT_IOSCHED="BFQ"
+          CONFIG_IO_URING_ASYNC_WORK=y
+          CONFIG_PAGE_POOL=y
           EOF
           # 移除构建流程中的 check_defconfig 校验
           sed -i 's/check_defconfig//' ./common/build.config.gki
