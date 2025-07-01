@@ -160,7 +160,7 @@ jobs:
             else
             echo "Error: NDK toolchain not found in common locations."
             exit 1
-           fi
+          fi
 
           export ARCH=arm64
           export CROSS_COMPILE="${CROSS_COMPILE_ARM64}"
