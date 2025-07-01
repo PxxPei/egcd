@@ -107,6 +107,17 @@ jobs:
           repo sync -c -j$(nproc --all  ) --no-tags
           df -h # 再次打印磁盘使用情况，查看 repo sync 后的空间占用
 
+      - name: Debug prebuilts path
+        run: |
+          echo "Listing contents of kernel_workspace:"
+          ls -la "${GITHUB_WORKSPACE}/kernel_workspace/"
+          echo "Listing contents of kernel_workspace/prebuilts/ (if exists):"
+          ls -la "${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/" || echo "kernel_workspace/prebuilts/ not found."
+          echo "Listing contents of kernel_workspace/prebuilts/clang/host/linux-x86/ (if exists):"
+          ls -la "${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/clang/host/linux-x86/" || echo "kernel_workspace/prebuilts/clang/host/linux-x86/ not found."
+          echo "Listing contents of kernel_workspace/prebuilts/gcc/linux-x86/aarch64/ (if exists):"
+          ls -la "${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/gcc/linux-x86/aarch64/" || echo "kernel_workspace/prebuilts/gcc/linux-x86/aarch64/ not found."
+
       - name: Remove protected exports
         run: |
           rm -rf kernel_workspace/kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports in common!"
@@ -130,16 +141,26 @@ jobs:
             export CROSS_COMPILE_ARM64="${GITHUB_WORKSPACE}/kernel_workspace/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-"
             echo "Using toolchain from repo prebuilts."
           else
-            NDK_ROOT=$(find /usr/local/lib/android/sdk/ndk/ -maxdepth 1 -type d -name "*-*" | head -n 1)
-            if [ -n "${NDK_ROOT}" ]; then
-              export PATH="${NDK_ROOT}/toolchains/llvm/prebuilt/linux-x86_64/bin:${NDK_ROOT}/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin:${PATH}"
-              export CROSS_COMPILE_ARM64="${NDK_ROOT}/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-"
-              echo "Using NDK toolchain from: ${NDK_ROOT}"
-            else
-              echo "Error: Neither repo prebuilts nor NDK toolchain found. Please ensure your manifest is correct or NDK is installed."
-              exit 1
-            fi
-          fi
+            # 查找 NDK 的常见路径
+# 尝试使用 ANDROID_NDK_HOME 环境变量
+# 或者在 /usr/local/lib/android/sdk/ndk/ 或 /opt/android/sdk/ndk/ 下查找
+NDK_ROOT=""
+if [ -n "${ANDROID_NDK_HOME}" ]; then
+  NDK_ROOT="${ANDROID_NDK_HOME}"
+elif [ -d "/usr/local/lib/android/sdk/ndk/" ]; then
+  NDK_ROOT=$(find /usr/local/lib/android/sdk/ndk/ -maxdepth 1 -type d -name "*-*" | head -n 1)
+elif [ -d "/opt/android/sdk/ndk/" ]; then
+  NDK_ROOT=$(find /opt/android/sdk/ndk/ -maxdepth 1 -type d -name "*-*" | head -n 1)
+fi
+
+if [ -n "${NDK_ROOT}" ]; then
+  export PATH="${NDK_ROOT}/toolchains/llvm/prebuilt/linux-x86_64/bin:${NDK_ROOT}/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin:${PATH}"
+  export CROSS_COMPILE_ARM64="${NDK_ROOT}/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-"
+  echo "Using NDK toolchain from: ${NDK_ROOT}"
+else
+  echo "Error: NDK toolchain not found in common locations."
+  exit 1
+fi
 
           export ARCH=arm64
           export CROSS_COMPILE="${CROSS_COMPILE_ARM64}"
