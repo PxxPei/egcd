@@ -142,15 +142,15 @@ jobs:
             echo "Using toolchain from repo prebuilts."
           else
             # 查找 NDK 的常见路径
-# 尝试使用 ANDROID_NDK_HOME 环境变量
-# 或者在 /usr/local/lib/android/sdk/ndk/ 或 /opt/android/sdk/ndk/ 下查找
-NDK_ROOT=""
+            # 尝试使用 ANDROID_NDK_HOME 环境变量
+            # 或者在 /usr/local/lib/android/sdk/ndk/ 或 /opt/android/sdk/ndk/ 下查找
+            NDK_ROOT=""
 if [ -n "${ANDROID_NDK_HOME}" ]; then
-  NDK_ROOT="${ANDROID_NDK_HOME}"
+            NDK_ROOT="${ANDROID_NDK_HOME}"
 elif [ -d "/usr/local/lib/android/sdk/ndk/" ]; then
-  NDK_ROOT=$(find /usr/local/lib/android/sdk/ndk/ -maxdepth 1 -type d -name "*-*" | head -n 1)
+            NDK_ROOT=$(find /usr/local/lib/android/sdk/ndk/ -maxdepth 1 -type d -name "*-*" | head -n 1)
 elif [ -d "/opt/android/sdk/ndk/" ]; then
-  NDK_ROOT=$(find /opt/android/sdk/ndk/ -maxdepth 1 -type d -name "*-*" | head -n 1)
+            NDK_ROOT=$(find /opt/android/sdk/ndk/ -maxdepth 1 -type d -name "*-*" | head -n 1)
 fi
 
 if [ -n "${NDK_ROOT}" ]; then
