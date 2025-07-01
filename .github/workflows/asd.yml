@@ -60,10 +60,17 @@ jobs:
       - name: Set up Android build environment and compile kernel
         run: |
           cd kernel_workspace
+          echo "Current directory after cd kernel_workspace:"
+          pwd
+          echo "Listing contents of current directory:"
+          ls -la
+          echo "Listing contents of kernel_workspace/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/:"
+          ls -la prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/
+
           # 设置环境变量，例如 ARCH 和 CROSS_COMPILE
-          export ARCH=arm64 # 假设是 arm64 架构，根据实际情况调整
-          export CROSS_COMPILE=$(pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android- # 示例路径，请根据实际情况调整
-          export KERNEL_OUT=$(pwd)/out/target/product/generic_arm/obj/KERNEL_OBJ # 定义内核编译输出目录
+          export ARCH=arm64
+          export CROSS_COMPILE=$(pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+          export KERNEL_OUT=$(pwd)/out/target/product/generic_arm/obj/KERNEL_OBJ
 
           # 清理旧的编译产物
           make O=${KERNEL_OUT} clean
