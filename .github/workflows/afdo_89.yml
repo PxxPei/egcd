@@ -27,7 +27,7 @@ jobs:
 
       - name: Download and extract create_llvm_prof binary
         run: |
-          curl -LO https://github.com/google/autofdo/releases/download/v0.30.1/create_llvm_prof-x86_64-v0.30.1.zip
+          curl -LO https://objects.githubusercontent.com/github-production-release-asset-2e65be/18347398/9190e1e8-6f14-4054-b85f-f974d8a43549?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20250701%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250701T154406Z&X-Amz-Expires=1800&X-Amz-Signature=ebac043340f8f06d7cf4749412a61f3ec99102472d1e5d0d39cc6bf755b6465e&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%3Dcreate_llvm_prof-x86_64-v0.30.1.zip&response-content-type=application%2Foctet-stream
           unzip create_llvm_prof-x86_64-v0.30.1.zip
           chmod +x create_llvm_prof
 
