@@ -6,6 +6,9 @@ on:
       VMLINUX_URL:
         description: 'Direct download URL for vmlinux.zip'
         required: true
+      PERF_DATA_URL: # 新增输入：perf.zip 文件的直接下载 URL
+        description: 'Direct download URL for perf.zip containing perf.data'
+        required: true
 
 jobs:
   generate-afdo:
@@ -27,6 +30,19 @@ jobs:
         run: |
           curl -L "${{ github.event.inputs.VMLINUX_URL }}" -o vmlinux.zip
           unzip -j vmlinux.zip vmlinux -d .
+
+      - name: Download and unzip perf.zip # 新增步骤：下载并解压 perf.zip
+        run: |
+          curl -L "${{ github.event.inputs.PERF_DATA_URL }}" -o perf.zip
+          unzip -j perf.zip perf.data -d . # 解压 perf.zip ，只提取 perf.data 文件到当前目录
+
+      - name: Verify perf.data exists # 验证 perf.data 是否存在
+        run: |
+          ls -l perf.data
+          if [ ! -f "perf.data" ]; then
+            echo "Error: perf.data not found after unzipping."
+            exit 1
+          fi
 
       - name: Generate kernel.afdo
         run: |
