@@ -32,7 +32,7 @@ jobs:
       - name: Download perf.data directly # 修改为直接下载 perf.data
         run: |
           # 请确保 'main' 是 perf.data 所在仓库的正确分支名称
-          curl -L "https://raw.githubusercontent.com/3620603660/afdo_89/main/perf.data.git" -o perf.data
+          curl -L "https://raw.githubusercontent.com/3620603660/afdo_89/refs/heads/main/perf.data.git" -o perf.data
 
       - name: Verify perf.data exists
         run: |
