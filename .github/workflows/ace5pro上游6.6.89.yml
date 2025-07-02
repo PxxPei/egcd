@@ -245,8 +245,9 @@ jobs:
 
           # 测试
           CONFIG_DEBUG_INFO＝y
-          CONFIG_PERF_EVENTS=y
-          CONFIG_FRAME_POINTER=y
+CONFIG_PERF_EVENTS=y                  CONFIG_FRAME_POINTER=y
+CONFIG_HAVE_BPF_JIT=y
+CONFIG_HAVE_PERF_EVENTS=yCONFIG_KALLSYMS=y
           EOF
           # 移除构建流程中的 check_defconfig 校验
           sed -i 's/check_defconfig//' ./common/build.config.gki
