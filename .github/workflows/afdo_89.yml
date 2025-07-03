@@ -29,18 +29,10 @@ jobs:
           curl -L "${{ github.event.inputs.VMLINUX_URL }}" -o vmlinux.zip
           unzip -j vmlinux.zip vmlinux -d .
 
-      - name: Download perf.data directly # 修改为直接下载 perf.data
+      - name: Clone egcd521/build-afdo repo (含 perf.zip)
         run: |
-          # 请确保 'main' 是 perf.data 所在仓库的正确分支名称
-          curl -L "https://raw.githubusercontent.com/3620603660/afdo_89/perf.data.git" -o perf.data
-
-      - name: Verify perf.data exists
-        run: |
-          ls -l perf.data
-          if [ ! -f "perf.data" ]; then
-            echo "Error: perf.data not found after download."
-            exit 1
-          fi
+          git clone https://github.com/3620603660/afdo_89.git
+          ls -lh afdo_89/perf.data
 
       - name: Generate kernel.afdo
         run: |
