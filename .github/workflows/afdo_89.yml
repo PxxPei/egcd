@@ -6,7 +6,6 @@ on:
       VMLINUX_URL:
         description: 'Direct download URL for vmlinux.zip'
         required: true
-      # 移除 PERF_DATA_URL，因为 perf.data 将直接从 raw.githubusercontent.com 下载
 
 jobs:
   generate-afdo:
@@ -16,7 +15,7 @@ jobs:
       - name: Install tools
         run: |
           sudo apt update
-          sudo apt install -y curl unzip
+          sudo apt install -y curl unzip git # 确保 git 已安装
 
       - name: Download and extract create_llvm_prof binary
         run: |
@@ -28,17 +27,21 @@ jobs:
         run: |
           curl -L "${{ github.event.inputs.VMLINUX_URL }}" -o vmlinux.zip
           unzip -j vmlinux.zip vmlinux -d .
+          ls -lh vmlinux # 增加验证步骤
 
-      - name: Clone egcd521/build-afdo repo (含 perf.zip)
+      - name: Clone repository with perf.data
         run: |
           git clone https://github.com/3620603660/afdo_89.git
-          ls -lh afdo_89/perf.data
+          echo "--- Verifying file path ---"
+          ls -lh afdo_89/perf.data # 验证 perf.data 确实在子目录中
 
       - name: Generate kernel.afdo
         run: |
-          ./create_llvm_prof --binary=vmlinux --profile=perf.data --out=kernel.afdo
+          echo "Running AFDO profile generation..."
+          # 修正：为 --profile 参数提供正确的相对路径
+          ./create_llvm_prof --binary=vmlinux --profile=afdo_89/perf.data --out=kernel.afdo
 
-      - name: Upload kernel.afdo
+      - name: Verify output and Upload kernel.afdo
         uses: actions/upload-artifact@v4
         with:
           name: kernel-afdo
