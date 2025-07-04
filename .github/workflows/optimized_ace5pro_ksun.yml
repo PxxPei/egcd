@@ -337,15 +337,19 @@ jobs:
          # 加入 ccache 到 PATH
          export PATH="/usr/lib/ccache:$PATH" 
 
+         # 设置固定内核构建时间
+         export KERNEL_TIME="Tue Dec 17 23:36:49 UTC 2024"
+         export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
+         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
          # 设置 AFDO 配置文件路径
-         export AFDO_PROFILE="${{ env.KERNEL_PLATFORM }}/afdo/kernel.afdo"
+         export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
          if [ ! -f "$AFDO_PROFILE" ]; then
            echo "Error: AFDO profile not found at $AFDO_PROFILE"
-           exit 1
+         exit 1
          fi
 
          # 打印验证
-         echo "KERNEL_TIME = $KBUILD_BUILD_TIMESTAMP"
+         echo "KERNEL_TIME = $KERNEL_TIME"
          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
          echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
 
@@ -357,7 +361,7 @@ jobs:
          LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
 
          # 进入源码目录
-         cd ${{ env.COMMON_DIR }}
+         cd kernel_workspace/kernel_platform/common
 
          # 执行 defconfig
          make -j$(nproc) $MAKE_ARGS gki_defconfig
