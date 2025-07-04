@@ -390,7 +390,6 @@ jobs:
         with:
           name: AnyKernel3_oneplus_ace5pro_${{ env.KSUVER }}
           path: ${{ env.KERNEL_PLATFORM }}/dist/AnyKernel3/*
-          # 添加 retention-days 限制 artifact 的保留时间，节省存储空间
-          retention-days: 7
+
 
 
