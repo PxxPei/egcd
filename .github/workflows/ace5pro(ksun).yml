@@ -243,6 +243,38 @@ jobs:
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 LZ4 加密
           echo "CONFIG_CRYPTO_842=y" >> ./common/arch/arm64/configs/gki_defconfig
 
+          # 其他内核优化
+          echo "kernel.perf_event_paranoid=-1" >> ./common/arch/arm64/configs/gki_defconfig # 允许非特权用户使用性能事件
+          echo "kernel.sched_latency_ns=10000000" >> ./common/arch/arm64/configs/gki_defconfig # 调度器延迟，降低响应时间
+          echo "kernel.sched_min_granularity_ns=1500000" >> ./common/arch/arm64/configs/gki_defconfig # 最小调度粒度
+          echo "kernel.sched_wakeup_granularity_ns=2000000" >> ./common/arch/arm64/configs/gki_defconfig # 唤醒粒度
+          echo "vm.dirty_ratio=20" >> ./common/arch/arm64/configs/gki_defconfig # 脏页占总内存的百分比上限
+          echo "vm.dirty_background_ratio=5" >> ./common/arch/arm64/configs/gki_defconfig # 脏页开始回写的百分比
+          echo "vm.extra_free_kbytes=8192" >> ./common/arch/arm64/configs/gki_defconfig # 额外空闲内存，防止OOM
+          echo "net.core.rmem_max=16777216" >> ./common/arch/arm64/configs/gki_defconfig # 最大接收缓冲区大小
+          echo "net.core.wmem_max=16777216" >> ./common/arch/arm64/configs/gki_defconfig # 最大发送缓冲区大小
+          echo "net.ipv4.tcp_fastopen=3" >> ./common/arch/arm64/configs/gki_defconfig # 启用TCP Fast Open
+          echo "net.ipv4.tcp_tw_reuse=1" >> ./common/arch/arm64/configs/gki_defconfig # 允许重用TIME-WAIT状态的TCP连接
+          echo "net.ipv4.tcp_fin_timeout=30" >> ./common/arch/arm64/configs/gki_defconfig # FIN-WAIT-2状态的超时时间
+          echo "net.ipv4.tcp_keepalive_time=600" >> ./common/arch/arm64/configs/gki_defconfig # TCP Keepalive时间
+          echo "net.ipv4.tcp_keepalive_probes=5" >> ./common/arch/arm64/configs/gki_defconfig # TCP Keepalive探测次数
+          echo "net.ipv4.tcp_keepalive_intvl=30" >> ./common/arch/arm64/configs/gki_defconfig # TCP Keepalive探测间隔
+          echo "fs.inotify.max_user_watches=524288" >> ./common/arch/arm64/configs/gki_defconfig # inotify最大用户监控数
+          echo "fs.file-max=100000" >> ./common/arch/arm64/configs/gki_defconfig # 系统最大文件句柄数
+          echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_IDLE_GOV_MENU=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_WRITEBACK=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NO_HZ_COMMON=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_CPUIDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # 确保 cpufreq 框架和 schedutil governor 启用
+          echo "CONFIG_CPUFREQ=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPUFREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # 确保 devfreq 框架启用 (用于 GPU 等)
+          echo "CONFIG_DEVFREQ_GOV_SIMPLE_ONDEMAND=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DEVFREQ_GOV_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DEVFREQ_GOV_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
 
           echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
