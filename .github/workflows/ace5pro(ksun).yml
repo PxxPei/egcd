@@ -134,6 +134,13 @@ jobs:
          cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
          echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
 
+      - name: Set CONFIG_LOCALVERSION
+        if: ${{ inputs.local_version != '-4k' }}
+        run: |
+         cd kernel_workspace/kernel_platform
+         echo "Using local_version: ${{ inputs.local_version }}"
+         sed -i "s/CONFIG_LOCALVERSION=\"-4k\"/CONFIG_LOCALVERSION=\"${{ inputs.local_version }}\"/" ./common/arch/arm64/configs/gki_defconfig
+
       - name: 🔧 Update compression algorithms (更新压缩算法)
         run: |
           cd kernel_workspace/kernel_platform/common
