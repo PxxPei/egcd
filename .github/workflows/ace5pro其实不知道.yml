@@ -149,7 +149,6 @@ jobs:
          echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
 
       - name: Set CONFIG_LOCALVERSION
-        if: ${{ inputs.local_version != '-4k' }}
         run: |
          cd kernel_workspace/kernel_platform
          echo "Using local_version: ${{ inputs.local_version }}"
@@ -310,7 +309,7 @@ jobs:
       - name: Add make name
         run: |
          cd kernel_workspace/kernel_platform
-         sed -i '186s|echo ".*"|echo "${KERNELVERSION}${scm_version}${config_localversion}"|' common/scripts/setlocalversion
+         sed -i '186s|echo ".*"|echo "${KERNELVERSION}${scm_version}${config_localversion}${{ github.event.inputs.local_version }}"|' common/scripts/setlocalversion
          sed -i "s/\${scm_version}/${{ github.event.inputs.KERNEL_NAME }}/g" ./common/scripts/setlocalversion
          
       - name: 设置 CONFIG_LOCALVERSION
