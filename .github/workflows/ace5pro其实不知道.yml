@@ -229,7 +229,6 @@ jobs:
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 LZ4 加密
           echo "CONFIG_CRYPTO_842=y" >> ./common/arch/arm64/configs/gki_defconfig
 
-
           # 其他内核优化
           echo "kernel.perf_event_paranoid=-1" >> ./common/arch/arm64/configs/gki_defconfig # 允许非特权用户使用性能事件
           echo "kernel.sched_latency_ns=10000000" >> ./common/arch/arm64/configs/gki_defconfig # 调度器延迟，降低响应时间
@@ -278,6 +277,7 @@ jobs:
           echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4 压缩
           echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4KD 压缩
           echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM ZSTD 压缩
+          echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig 启用 ZRAM ZSTD 压缩
           echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM 多压缩器支持
 
           echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -287,7 +287,14 @@ jobs:
           echo "CONFIG_QCOM_CPUIDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
 
           echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/con
+          echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # 确保 cpufreq 框架和 schedutil governor 启用
+          echo "CONFIG_CPUFREQ=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPUFREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # 确保 devfreq 框架启用 (用于 GPU 等)
+          echo "CONFIG_DEVFREQ_GOV_SIMPLE_ONDEMAND=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DEVFREQ_GOV_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DEVFREQ_GOV_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
 
          
           # Remove check_defconfig
