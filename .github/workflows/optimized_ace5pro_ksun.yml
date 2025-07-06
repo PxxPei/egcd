@@ -113,7 +113,7 @@ jobs:
       - name: Initialize repo and sync
         run: |
          mkdir -p ${{ env.KERNEL_WORKSPACE }} && cd ${{ env.KERNEL_WORKSPACE }}
-         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
+         repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
          repo --trace sync -c -j$(nproc --all) --no-tags
          # 使用 find 命令更健壮地删除文件
          find kernel_platform/common/android/ -name "abi_gki_protected_exports_*" -delete || echo "No common protected exports!"
