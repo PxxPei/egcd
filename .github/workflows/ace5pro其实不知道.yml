@@ -226,11 +226,6 @@ jobs:
           echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
 
 
-
-          # 内核SwapCached优化
-          echo "vm.swappiness=10" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "vm.vfs_cache_pressure=50" >> ./common/arch/arm64/configs/gki_defconfig
-
           # 确保所有必需的压缩算法都已启用
           echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 LZ4HC 加密
           echo "CONFIG_CRYPTO_LZ4K=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 LZ4K 加密
@@ -298,16 +293,6 @@ jobs:
 
           echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/con
-
-          # I/O调度器优化
-          echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline I/O调度器
-          echo "CONFIG_BLK_MQ_IOSCHED_KYBER=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用kyber I/O调度器
-          echo "CONFIG_SCHED_EEVDF=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 EEVDF 调度器
-          echo "CONFIG_BLK_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig # Enable BFQ I/O scheduler
-          echo "CONFIG_BLK_MQ_IOSCHED_NONE=y" >> ./common/arch/arm64/configs/gki_defconfig # Enable NONE I/O scheduler
-          echo "CONFIG_DEFAULT_IOSCHED=\"BFQ\"" >> ./common/arch/arm64/configs/gki_defconfig # Set BFQ as default I/O scheduler
-          echo "CONFIG_IO_URING_ASYNC_WORK=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 io_uring 异步工作队列
-          echo "CONFIG_PAGE_POOL=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用页面池优化
 
          
           # Remove check_defconfig
