@@ -159,6 +159,13 @@ jobs:
          patch -p1 -F 3 < syscall_hooks.patch || true
          patch -s -p1 -F 3 < 1.patch
          echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
+
+      - name: Set CONFIG_LOCALVERSION
+        if: ${{ inputs.local_version != '-4k' }}
+        run: |
+         cd kernel_workspace/kernel_platform
+         echo "Using local_version: ${{ inputs.local_version }}"
+         sed -i "s/CONFIG_LOCALVERSION=\"-4k\"/CONFIG_LOCALVERSION=\"${{ inputs.local_version }}\"/" ./common/arch/arm64/configs/gki_defconfig
    
       - name: 🔧 Update compression algorithms (更新压缩算法)
         run: |
@@ -233,24 +240,6 @@ jobs:
           echo "CONFIG_CRYPTO_842=y" >> ./common/arch/arm64/configs/gki_defconfig
 
 
-          echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
-          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
-          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
-          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
-          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
-          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
-
-          # 启用 ZRAM 及其压缩选项
-          echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM
-          echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4 压缩
-          echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4KD 压缩
-          echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM ZSTD 压缩
-          echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM 多压缩器支持
-
-
           # 其他内核优化
           echo "kernel.perf_event_paranoid=-1" >> ./common/arch/arm64/configs/gki_defconfig # 允许非特权用户使用性能事件
           echo "kernel.sched_latency_ns=10000000" >> ./common/arch/arm64/configs/gki_defconfig # 调度器延迟，降低响应时间
@@ -269,13 +258,11 @@ jobs:
           echo "net.ipv4.tcp_keepalive_intvl=30" >> ./common/arch/arm64/configs/gki_defconfig # TCP Keepalive探测间隔
           echo "fs.inotify.max_user_watches=524288" >> ./common/arch/arm64/configs/gki_defconfig # inotify最大用户监控数
           echo "fs.file-max=100000" >> ./common/arch/arm64/configs/gki_defconfig # 系统最大文件句柄数
-
           echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_CPU_IDLE_GOV_MENU=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_WRITEBACK=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NO_HZ_COMMON=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_QCOM_CPUIDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
-
           echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/configs/gki_defconfig
           # 确保 cpufreq 框架和 schedutil governor 启用
@@ -285,6 +272,32 @@ jobs:
           echo "CONFIG_DEVFREQ_GOV_SIMPLE_ONDEMAND=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_DEVFREQ_GOV_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_DEVFREQ_GOV_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
+
+          echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
+          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
+          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
+          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
+          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
+          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
+
+          # 启用 ZRAM 及其压缩选项
+          echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM
+          echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4 压缩
+          echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4KD 压缩
+          echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM ZSTD 压缩
+          echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM 多压缩器支持
+
+          echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_IDLE_GOV_MENU=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_WRITEBACK=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NO_HZ_COMMON=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_CPUIDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
+
+          echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/con
 
           # I/O调度器优化
           echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline I/O调度器
@@ -324,7 +337,7 @@ jobs:
       - name: Add make name
         run: |
          cd kernel_workspace/kernel_platform
-         sed -i '186s|echo ".*"|echo "${KERNELVERSION}${scm_version}${config_localversion}"|' common/scripts/setlocalversion
+         sed -i '186s|echo ".*"|echo "${KERNELVERSION}${config_localversion}${scm_version}"|' common/scripts/setlocalversion
          sed -i "s/\${scm_version}/${{ github.event.inputs.KERNEL_NAME }}/g" ./common/scripts/setlocalversion
          
       - name: 设置 CONFIG_LOCALVERSION
@@ -332,13 +345,6 @@ jobs:
          cd kernel_workspace/kernel_platform
          echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.local_version }}"' >> ./common/arch/arm64/configs/gki_defconfig
 
-    
-      - name: 拉取并集成 sched_ext 调度器
-        run: |
-         cd kernel_workspace/kernel_platform/
-         git clone https://github.com/3620603660/sched_ext.git
-         cp -r ./sched_ext/* ./common/kernel/sched
-         rm -rf ./sched_ext/.git
 
       - name: 拉取afdo
         run: |
