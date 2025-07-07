@@ -270,6 +270,7 @@ jobs:
           echo "CONFIG_DEFAULT_IOSCHED=\"BFQ\"" >> ./common/arch/arm64/configs/gki_defconfig # Set BFQ as default I/O scheduler
           echo "CONFIG_IO_URING_ASYNC_WORK=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 io_uring 异步工作队列
           echo "CONFIG_PAGE_POOL=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用页面池优化
+          echo "CONFIG_AIO=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用异步块I/O
 
          
           # Remove check_defconfig
