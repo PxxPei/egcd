@@ -366,7 +366,7 @@ jobs:
       - name: Prepare AnyKernel3 package
         run: |
           cd kernel_workspace/kernel_platform/dist
-          git clone https://github.com/362003660/AnyKernel3.git AnyKernel3 --depth=1
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
           rm -rf AnyKernel3/.git
           rm -f AnyKernel3/push.sh
           cp Image AnyKernel3/
