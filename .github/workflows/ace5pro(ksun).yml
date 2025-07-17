@@ -357,7 +357,6 @@ jobs:
 
          # 编译全部目标
          make -j$(nproc) $MAKE_ARGS all
-         make -j$(nproc) ${MAKE_ARGS} CC=$CC modules
 
          # 创建输出目录并复制 Image
          mkdir -p ../dist
