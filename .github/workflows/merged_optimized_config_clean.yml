@@ -303,17 +303,6 @@ jobs:
           echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用ZSTD压缩
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用LZ4压缩
           # ========================================
-          # 高级调度器特性
-          # ========================================
-          echo "CONFIG_SCHED_CORE=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用核心调度
-          echo "CONFIG_SCHED_MC=y" >> ./common/arch/arm64/configs/gki_defconfig           # 启用多核调度
-          echo "CONFIG_SCHED_SMT=y" >> ./common/arch/arm64/configs/gki_defconfig          # 启用SMT调度
-          echo "CONFIG_UCLAMP_TASK=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用任务利用率限制
-          echo "CONFIG_UCLAMP_BUCKETS=y" >> ./common/arch/arm64/configs/gki_defconfig     # 启用利用率桶
-          echo "CONFIG_UCLAMP_MIN_TUNABLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用最小利用率调节
-          echo "CONFIG_UCLAMP_MAX_TUNABLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用最大利用率调节
-
-          # ========================================
           # I/O调度器优化
           # ========================================
           echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline调度器
@@ -346,34 +335,18 @@ jobs:
           echo "CONFIG_ZRAM_MEMORY_LIMIT=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM内存限制
 
           # ZSWAP配置
-          echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZSWAP
-          echo "CONFIG_ZPOOL=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZPOOL
-          echo "CONFIG_ZSMALLOC=y" >> ./common/arch/arm64/configs/gki_defconfig                # 启用ZSMALLOC
-          echo "CONFIG_ZSWAP_DEFAULT_COMPRESSOR=\"lz4\"" >> ./common/arch/arm64/configs/gki_defconfig # 默认LZ4压缩器
-          echo "CONFIG_ZSWAP_DEFAULT_ZPOOL=\"zbud\"" >> ./common/arch/arm64/configs/gki_defconfig     # 默认zbud池
-
+          echo "CONFIG_FRONTSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig               # 启用前端交换，是ZSWAP功能的依赖。
+          echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZSWAP，它在物理内存中创建一个压缩的交换缓存，比直接写入慢速存储性能更好。
+          echo "CONFIG_ZPOOL=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZPOOL，为ZSWAP提供后端压缩池。
+          echo "CONFIG_ZBUD=y" >> ./common/arch/arm64/configs/gki_defconfig                    # 启用ZBUD分配器，它尝试在同一页中存储两个压缩对象，是ZSWAP常用的分配器。
+          echo "CONFIG_ZSMALLOC=y" >> ./common/arch/arm64/configs/gki_defconfig                # 启用ZSMALLOC，是更现代、更高效的压缩内存分配器，通常是ZRAM和ZSWAP的首选。
           # ========================================
           # 内存管理优化
           # ========================================
           echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig                 # LRU生成器
-          echo "CONFIG_MEMCG_KMEM=y" >> ./common/arch/arm64/configs/gki_defconfig              # 内存控制组内核内存
-          echo "CONFIG_SWAP=y" >> ./common/arch/arm64/configs/gki_defconfig                    # 交换分区
-          echo "CONFIG_MM_UTIL=y" >> ./common/arch/arm64/configs/gki_defconfig                 # 内存管理工具
-          echo "CONFIG_VM_EVENT_COUNTERS=y" >> ./common/arch/arm64/configs/gki_defconfig       # 虚拟内存事件计数器
-          echo "CONFIG_COMPACTION=y" >> ./common/arch/arm64/configs/gki_defconfig              # 内存压缩
-          echo "CONFIG_KSM=y" >> ./common/arch/arm64/configs/gki_defconfig                     # 内核同页合并
-          echo "CONFIG_KSM_THP=y" >> ./common/arch/arm64/configs/gki_defconfig                 # KSM透明大页
-          echo "CONFIG_TRANSPARENT_HUGEPAGE=y" >> ./common/arch/arm64/configs/gki_defconfig    # 透明大页
-          echo "CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS=y" >> ./common/arch/arm64/configs/gki_defconfig # 总是启用透明大页
-          echo "CONFIG_IDLE_PAGE_TRACKING=y" >> ./common/arch/arm64/configs/gki_defconfig      # 空闲页面跟踪
-          echo "CONFIG_SHMEM=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 共享内存
-          echo "CONFIG_ANON_INODES=y" >> ./common/arch/arm64/configs/gki_defconfig             # 匿名inode
-          echo "CONFIG_MIGRATION=y" >> ./common/arch/arm64/configs/gki_defconfig               # 页面迁移
-          echo "CONFIG_HIGHMEM=y" >> ./common/arch/arm64/configs/gki_defconfig                 # 高端内存
-          echo "CONFIG_CLEANCACHE=y" >> ./common/arch/arm64/configs/gki_defconfig              # 清洁缓存
-          echo "CONFIG_FRONTSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig               # 前端交换
-          echo "CONFIG_ZBUD=y" >> ./common/arch/arm64/configs/gki_defconfig                    # ZBUD分配器
-
+          echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig                 # 启用多代LRU(MGLRU)，是较新的页面回收算法，能更精准地换出冷页面，提升内存命中率，对流畅度有益。
+          echo "CONFIG_TRANSPARENT_HUGEPAGE=y" >> ./common/arch/arm64/configs/gki_defconfig    # 启用透明大页(THP)的基础支持，通过使用更大的内存页减少TLB miss，提升性能。
+          echo "CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y" >> ./common/arch/arm64/configs/gki_defconfig # 将THP设置为'madvise'模式。这是最安全和推荐的模式，允许应用通过madvise()系统调用按需使用大页，避免了全局强制开启的风险
           # ========================================
           # 网络性能优化
           # ========================================
