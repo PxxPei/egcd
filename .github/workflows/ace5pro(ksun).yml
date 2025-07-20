@@ -237,12 +237,17 @@ jobs:
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 LZ4 加密
           echo "CONFIG_CRYPTO_842=y" >> ./common/arch/arm64/configs/gki_defconfig
 
+          echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
+          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
+          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
+          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
+          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
+          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
 
-          echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_IDLE_GOV_MENU=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_WRITEBACK=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_NO_HZ_COMMON=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_CPUIDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
+
 
           echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/configs/gki_defconfig
