@@ -319,21 +319,6 @@ jobs:
           echo "CONFIG_ATA_MQ_ENABLED=y" >> ./common/arch/arm64/configs/gki_defconfig          # ATA多队列启用
 
           # ========================================
-          # ZRAM和内存压缩优化
-          # ========================================
-          echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig                    # 启用ZRAM
-          echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM LZ4压缩
-          echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig      # ZRAM ZSTD压缩
-          echo "CONFIG_ZRAM_MEMORY_LIMIT=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM内存限制
-
-          # ZSWAP配置
-          echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZSWAP
-          echo "CONFIG_ZPOOL=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZPOOL
-          echo "CONFIG_ZSMALLOC=y" >> ./common/arch/arm64/configs/gki_defconfig                # 启用ZSMALLOC
-          echo "CONFIG_ZSWAP_DEFAULT_COMPRESSOR=\"lz4\"" >> ./common/arch/arm64/configs/gki_defconfig # 默认LZ4压缩器
-          echo "CONFIG_ZSWAP_DEFAULT_ZPOOL=\"zbud\"" >> ./common/arch/arm64/configs/gki_defconfig     # 默认zbud池
-
-          # ========================================
           # 内存管理优化
           # ========================================
           echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig                 # 启用多代LRU(MGLRU)，是较新的页面回收算法，能更精准地换出冷页面，提升内存命中率，对流畅度有益。
