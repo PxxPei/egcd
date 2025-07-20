@@ -312,6 +312,27 @@ jobs:
           echo "CONFIG_PAGE_POOL=y" >> ./common/arch/arm64/configs/gki_defconfig               # 启用页面池优化
           echo "CONFIG_AIO=y" >> ./common/arch/arm64/configs/gki_defconfig                     # 启用异步块I/O
 
+          # 多队列I/O调度器
+          echo "CONFIG_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig     # 多队列deadline调度器
+          echo "CONFIG_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig          # 多队列BFQ调度器
+          echo "CONFIG_SCSI_MQ_DEFAULT=y" >> ./common/arch/arm64/configs/gki_defconfig         # SCSI多队列默认启用
+          echo "CONFIG_ATA_MQ_ENABLED=y" >> ./common/arch/arm64/configs/gki_defconfig          # ATA多队列启用
+
+          # ========================================
+          # ZRAM和内存压缩优化
+          # ========================================
+          echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig                    # 启用ZRAM
+          echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM LZ4压缩
+          echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig      # ZRAM ZSTD压缩
+          echo "CONFIG_ZRAM_MEMORY_LIMIT=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM内存限制
+
+          # ZSWAP配置
+          echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZSWAP
+          echo "CONFIG_ZPOOL=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZPOOL
+          echo "CONFIG_ZSMALLOC=y" >> ./common/arch/arm64/configs/gki_defconfig                # 启用ZSMALLOC
+          echo "CONFIG_ZSWAP_DEFAULT_COMPRESSOR=\"lz4\"" >> ./common/arch/arm64/configs/gki_defconfig # 默认LZ4压缩器
+          echo "CONFIG_ZSWAP_DEFAULT_ZPOOL=\"zbud\"" >> ./common/arch/arm64/configs/gki_defconfig     # 默认zbud池
+
           # ========================================
           # 内存管理优化
           # ========================================
