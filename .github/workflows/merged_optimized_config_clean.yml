@@ -313,22 +313,6 @@ jobs:
           echo "CONFIG_AIO=y" >> ./common/arch/arm64/configs/gki_defconfig                     # 启用异步块I/O
 
           # ========================================
-          # ZRAM和内存压缩优化
-          # ========================================
-          echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig                    # 启用ZRAM
-          echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM LZ4压缩
-          echo "CONFIG_ZRAM_WRITEBACK=y" >> ./common/arch/arm64/configs/gki_defconfig          # ZRAM写回
-          echo "CONFIG_ZRAM_MULTI_HEAD=y" >> ./common/arch/arm64/configs/gki_defconfig         # ZRAM多头
-          echo "CONFIG_ZRAM_MEMORY_LIMIT=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM内存限制
-
-          # ZSWAP配置
-          echo "CONFIG_FRONTSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig               # 启用前端交换，是ZSWAP功能的依赖。
-          echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZSWAP，它在物理内存中创建一个压缩的交换缓存，比直接写入慢速存储性能更好。
-          echo "CONFIG_ZPOOL=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZPOOL，为ZSWAP提供后端压缩池。
-          echo "CONFIG_ZBUD=y" >> ./common/arch/arm64/configs/gki_defconfig                    # 启用ZBUD分配器，它尝试在同一页中存储两个压缩对象，是ZSWAP常用的分配器。
-          echo "CONFIG_ZSMALLOC=y" >> ./common/arch/arm64/configs/gki_defconfig                # 启用ZSMALLOC，是更现代、更高效的压缩内存分配器，通常是ZRAM和ZSWAP的首选。
-
-          # ========================================
           # 内存管理优化
           # ========================================
           echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig                 # 启用多代LRU(MGLRU)，是较新的页面回收算法，能更精准地换出冷页面，提升内存命中率，对流畅度有益。
