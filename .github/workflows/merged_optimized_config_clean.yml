@@ -306,30 +306,17 @@ jobs:
           # I/O调度器优化
           # ========================================
           echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline调度器
-          echo "CONFIG_BLK_MQ_IOSCHED_KYBER=y" >> ./common/arch/arm64/configs/gki_defconfig    # 启用kyber调度器
-          echo "CONFIG_SCHED_EEVDF=y" >> ./common/arch/arm64/configs/gki_defconfig             # 启用EEVDF调度器
           echo "CONFIG_BLK_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig      # 启用BFQ调度器
-          echo "CONFIG_BLK_MQ_IOSCHED_NONE=y" >> ./common/arch/arm64/configs/gki_defconfig     # 启用NONE调度器
           echo "CONFIG_DEFAULT_IOSCHED=\"BFQ\"" >> ./common/arch/arm64/configs/gki_defconfig   # 设置BFQ为默认调度器
           echo "CONFIG_IO_URING_ASYNC_WORK=y" >> ./common/arch/arm64/configs/gki_defconfig     # 启用io_uring异步工作队列
           echo "CONFIG_PAGE_POOL=y" >> ./common/arch/arm64/configs/gki_defconfig               # 启用页面池优化
           echo "CONFIG_AIO=y" >> ./common/arch/arm64/configs/gki_defconfig                     # 启用异步块I/O
-
-          # 多队列I/O调度器
-          echo "CONFIG_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig     # 多队列deadline调度器
-          echo "CONFIG_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig          # 多队列BFQ调度器
-          echo "CONFIG_SCSI_MQ_DEFAULT=y" >> ./common/arch/arm64/configs/gki_defconfig         # SCSI多队列默认启用
-          echo "CONFIG_ATA_MQ_ENABLED=y" >> ./common/arch/arm64/configs/gki_defconfig          # ATA多队列启用
-          echo "CONFIG_BLK_DEV_IO_TRACE=y" >> ./common/arch/arm64/configs/gki_defconfig        # I/O跟踪
 
           # ========================================
           # ZRAM和内存压缩优化
           # ========================================
           echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig                    # 启用ZRAM
           echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM LZ4压缩
-          echo "CONFIG_ZRAM_LZO_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM LZO压缩
-          echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig      # ZRAM ZSTD压缩
-          echo "CONFIG_ZRAM_DEBUG=n" >> ./common/arch/arm64/configs/gki_defconfig              # 禁用ZRAM调试
           echo "CONFIG_ZRAM_WRITEBACK=y" >> ./common/arch/arm64/configs/gki_defconfig          # ZRAM写回
           echo "CONFIG_ZRAM_MULTI_HEAD=y" >> ./common/arch/arm64/configs/gki_defconfig         # ZRAM多头
           echo "CONFIG_ZRAM_MEMORY_LIMIT=y" >> ./common/arch/arm64/configs/gki_defconfig       # ZRAM内存限制
@@ -340,10 +327,10 @@ jobs:
           echo "CONFIG_ZPOOL=y" >> ./common/arch/arm64/configs/gki_defconfig                   # 启用ZPOOL，为ZSWAP提供后端压缩池。
           echo "CONFIG_ZBUD=y" >> ./common/arch/arm64/configs/gki_defconfig                    # 启用ZBUD分配器，它尝试在同一页中存储两个压缩对象，是ZSWAP常用的分配器。
           echo "CONFIG_ZSMALLOC=y" >> ./common/arch/arm64/configs/gki_defconfig                # 启用ZSMALLOC，是更现代、更高效的压缩内存分配器，通常是ZRAM和ZSWAP的首选。
+
           # ========================================
           # 内存管理优化
           # ========================================
-          echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig                 # LRU生成器
           echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig                 # 启用多代LRU(MGLRU)，是较新的页面回收算法，能更精准地换出冷页面，提升内存命中率，对流畅度有益。
           echo "CONFIG_TRANSPARENT_HUGEPAGE=y" >> ./common/arch/arm64/configs/gki_defconfig    # 启用透明大页(THP)的基础支持，通过使用更大的内存页减少TLB miss，提升性能。
           echo "CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y" >> ./common/arch/arm64/configs/gki_defconfig # 将THP设置为'madvise'模式。这是最安全和推荐的模式，允许应用通过madvise()系统调用按需使用大页，避免了全局强制开启的风险
@@ -354,12 +341,8 @@ jobs:
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
           echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
           echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
-          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 BIC TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 CUBIC TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 WESTWOOD TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 禁用 HTCP TCP 拥塞控制算法
-          echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置 BBR 为默认 TCP 拥塞控制算法
-          
+          echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置BBR为默认TCP拥塞控制算法
+
           # 禁用defconfig检查以允许自定义配置
           sed -i 's/check_defconfig//' ./common/build.config.gki
           cd common
