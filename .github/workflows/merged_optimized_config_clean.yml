@@ -324,6 +324,11 @@ jobs:
           echo "CONFIG_PAGE_POOL=y" >> ./common/arch/arm64/configs/gki_defconfig               # 启用页面池优化
           echo "CONFIG_AIO=y" >> ./common/arch/arm64/configs/gki_defconfig                     # 启用异步块I/O
 
+          # 多队列I/O调度器
+          echo "CONFIG_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig     # 多队列deadline调度器
+          echo "CONFIG_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig          # 多队列BFQ调度器
+          echo "CONFIG_SCSI_MQ_DEFAULT=y" >> ./common/arch/arm64/configs/gki_defconfig         # SCSI多队列默认启用
+          
           # ========================================
           # 内存管理优化
           # ========================================
