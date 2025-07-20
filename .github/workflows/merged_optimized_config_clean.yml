@@ -302,6 +302,18 @@ jobs:
           echo "CONFIG_CRYPTO_LZ4KD=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用LZ4KD压缩
           echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用ZSTD压缩
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用LZ4压缩
+
+          # ========================================
+          # 高级调度器特性
+          # ========================================
+          echo "CONFIG_SCHED_CORE=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用核心调度
+          echo "CONFIG_SCHED_MC=y" >> ./common/arch/arm64/configs/gki_defconfig           # 启用多核调度
+          echo "CONFIG_SCHED_SMT=y" >> ./common/arch/arm64/configs/gki_defconfig          # 启用SMT调度
+          echo "CONFIG_UCLAMP_TASK=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用任务利用率限制
+          echo "CONFIG_UCLAMP_BUCKETS=y" >> ./common/arch/arm64/configs/gki_defconfig     # 启用利用率桶
+          echo "CONFIG_UCLAMP_MIN_TUNABLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用最小利用率调节
+          echo "CONFIG_UCLAMP_MAX_TUNABLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用最大利用率调节
+          
           # ========================================
           # I/O调度器优化
           # ========================================
@@ -311,12 +323,6 @@ jobs:
           echo "CONFIG_IO_URING_ASYNC_WORK=y" >> ./common/arch/arm64/configs/gki_defconfig     # 启用io_uring异步工作队列
           echo "CONFIG_PAGE_POOL=y" >> ./common/arch/arm64/configs/gki_defconfig               # 启用页面池优化
           echo "CONFIG_AIO=y" >> ./common/arch/arm64/configs/gki_defconfig                     # 启用异步块I/O
-
-          # 多队列I/O调度器
-          echo "CONFIG_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig     # 多队列deadline调度器
-          echo "CONFIG_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig          # 多队列BFQ调度器
-          echo "CONFIG_SCSI_MQ_DEFAULT=y" >> ./common/arch/arm64/configs/gki_defconfig         # SCSI多队列默认启用
-          echo "CONFIG_ATA_MQ_ENABLED=y" >> ./common/arch/arm64/configs/gki_defconfig          # ATA多队列启用
 
           # ========================================
           # 内存管理优化
