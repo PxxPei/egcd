@@ -302,20 +302,7 @@ jobs:
           echo "CONFIG_CRYPTO_LZ4KD=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用LZ4KD压缩
           echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用ZSTD压缩
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用LZ4压缩
-          echo "CONFIG_CRYPTO_842=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用842压缩
-
-          # ========================================
-          # CPU调度器和电源管理优化
-          # ========================================
-          echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig           # 启用CPU空闲管理
-          echo "CONFIG_WRITEBACK=y" >> ./common/arch/arm64/configs/gki_defconfig          # 启用写回缓存
-          echo "CONFIG_NO_HZ_COMMON=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用无滴答模式
-          echo "CONFIG_QCOM_CPUIDLE=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用高通CPU空闲驱动
-
-          # EAS（Energy Aware Scheduling）能效感知调度
-          echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig          # 启用EAS调度器
-          echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用CPU能效策略
-          # ========================================
+ ========================================
           # 高级调度器特性
           # ========================================
           echo "CONFIG_SCHED_CORE=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用核心调度
