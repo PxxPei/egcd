@@ -309,12 +309,11 @@ jobs:
           echo "CONFIG_SCHED_CORE=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用核心调度
           echo "CONFIG_SCHED_MC=y" >> ./common/arch/arm64/configs/gki_defconfig           # 启用多核调度
           echo "CONFIG_UCLAMP_TASK=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用任务利用率限制
-          echo "CONFIG_UCLAMP_BUCKETS=y" >> ./common/arch/arm64/configs/gki_defconfig     # 启用利用率桶
           echo "CONFIG_UCLAMP_MIN_TUNABLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用最小利用率调节
           echo "CONFIG_UCLAMP_MAX_TUNABLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用最大利用率调节
           echo "CONFIG_SCHED_HRTICK=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用高分辨率时钟，提升调度精度
           echo "CONFIG_CPU_IDLE_GOV_LADDER=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用阶梯式空闲状态管理，优化功耗
-          echo "CONFIG_ARM64_ERRATUM_843419=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用针对骁龙8e处理器的特定错误修正
+
           
           # ========================================
           # I/O调度器优化
@@ -343,6 +342,10 @@ jobs:
           echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
           echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # BIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # CUBIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # WESTWOOD TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # HTCP TCP 拥塞控制算法
           echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
           echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置BBR为默认TCP拥塞控制算法
 
