@@ -171,7 +171,7 @@ jobs:
          git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
          git clone https://$TOKEN@github.com/3620603660/boot.git
          git clone https://github.com/WildPlusKernel/kernel_patches.git
-         git clone https://github.com/zzh20188/GKI_KernelSU_SUSFS.git zzh_patch
+         git clone https://github.com/3620603660/GKI_KernelSU_SUSFS.git zzh_patch
          
          cd kernel_platform
          # 复制SUSFS补丁文件
@@ -220,7 +220,7 @@ jobs:
          patch -p1 --fuzz=3 --forward < rules.c.patch || true
          patch -p1 --fuzz=3 --forward < sucompat.c.patch || true
          patch -p1 --fuzz=3 --forward < kernel_compat.c.patch || true
-         
+         patch -p1 --fuzz=3 --forward < min_scope_syscall_hooks_v1.4.patch || true
          cd ../
          cd ./common/
          # 针对特定设备的补丁调整
