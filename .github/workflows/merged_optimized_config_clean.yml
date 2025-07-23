@@ -77,7 +77,7 @@ jobs:
       - name: Configure Git
         run: |
          git config --global user.name "build"
-         git config --global user.email "2106456897@qq.com"
+         git config --global user.email "3620603668@qq.com"
 
       # 检出仓库代码
       - name: Checkout  
