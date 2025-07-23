@@ -336,8 +336,7 @@ jobs:
           echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TRANSPARENT_HUGEPAGE=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # 新增下面这行，明确注释掉 SLUB 调试选项
-          echo "# CONFIG_SLUB_DEBUG is not set" >> ./common/arch/arm64/configs/gki_defconfig # 确保关闭SLUB调试以获得最佳性能
+          
           # ========================================
           # 网络性能优化 (BBR + Cake + ECN)
           # ========================================
