@@ -122,7 +122,7 @@ jobs:
          ccache -s || true
 
       # ========================================
-      # 第三阶段：源码获取和同步
+      # 第三阶段：源码获取和同步 (最终优化版)
       # ========================================
       
       # 安装repo工具用于管理多个Git仓库
@@ -132,15 +132,35 @@ jobs:
          chmod a+x ~/repo
          sudo mv ~/repo /usr/local/bin/repo
 
-      # 初始化并同步内核源码仓库
-      - name: Initialize repo and sync
+      # 初始化并同步内核源码仓库 (使用您的上游清单和指定分支)
+      - name: Initialize repo and sync from your upstream manifest
         run: |
          mkdir kernel_workspace && cd kernel_workspace
-         repo init -u https://github.com/aa123330/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
+         
+         # 核心改动：
+         # -u 指向您的上游清单仓库
+         # -b 指向您指定的 "oneplus/sm8750" 分支
+         # -m 仍然使用 workflow input，保持灵活性
+         echo "🚀 Initializing repo with your manifest: https://github.com/aa123330/kernel_manifest"
+         echo "🌲 Target branch: oneplus/sm8750"
+         echo "📄 Device manifest file: ${{ github.event.inputs.FEIL }}.xml"
+         
+         repo init -u https://github.com/aa123330/kernel_manifest.git \
+                   -b oneplus/sm8750 \
+                   -m ${{ github.event.inputs.FEIL }}.xml \
+                   --depth=1 \
+                   --no-repo-verify
+         
+         echo "🔄 Syncing all repositories from your manifest..."
+         # 使用 -j$(nproc --all) 来利用所有可用的CPU核心进行同步，加快速度
          repo --trace sync -c -j$(nproc --all) --no-tags
+         
+         echo "✅ Source code synced successfully."
+         
          # 清理可能导致编译问题的ABI导出文件
-         rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
-         rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+         echo "🧹 Cleaning up ABI files..."
+         rm -f kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports in common!"
+         rm -f kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports in msm-kernel!"
          
       # ========================================
       # 第四阶段：KernelSU Next集成
