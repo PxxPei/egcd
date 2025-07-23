@@ -336,8 +336,6 @@ jobs:
           echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TRANSPARENT_HUGEPAGE=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # 新增下面这行，明确注释掉 SLUB 调试选项
-          echo "# CONFIG_SLUB_DEBUG is not set" >> ./common/arch/arm64/configs/gki_defconfig # 确保关闭SLUB调试以获得最佳性能
           # ========================================
           # 网络性能优化 (BBR + Cake + ECN)
           # ========================================
@@ -353,11 +351,10 @@ jobs:
           # 新增下面这行，将 Cake 设为默认网络调度器
           echo "CONFIG_DEFAULT_NET_SCH=\"cake\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置Cake为默认网络调度器
           # 新增下面几行，使用 sed 命令移除其他不再需要的 TCP 拥塞算法，以减小内核体积
-          sed -i '/CONFIG_TCP_CONG_CUBIC/d' ./common/arch/arm64/configs/gki_defconfig
-          sed -i '/CONFIG_TCP_CONG_BIC/d' ./common/arch/arm64/configs/gki_defconfig
-          sed -i '/CONFIG_TCP_CONG_WESTWOOD/d' ./common/arch/arm64/configs/gki_defconfig
-          sed -i '/CONFIG_TCP_CONG_HTCP/d' ./common/arch/arm64/configs/gki_defconfig
-
+          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
 
           # 禁用defconfig检查以允许自定义配置
           sed -i 's/check_defconfig//' ./common/build.config.gki
