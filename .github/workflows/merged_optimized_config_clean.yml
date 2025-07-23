@@ -145,7 +145,7 @@ jobs:
          echo "🌲 Target branch: oneplus/sm8750"
          echo "📄 Device manifest file: ${{ github.event.inputs.FEIL }}.xml"
          
-         repo init -u https://github.com/aa123330/kernel_manifest.git \
+         repo init -u https://github.com/3620603660/kernel_manifest.git \
                    -b oneplus/sm8750 \
                    -m ${{ github.event.inputs.FEIL }}.xml \
                    --depth=1 \
