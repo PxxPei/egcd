@@ -255,51 +255,6 @@ jobs:
          echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
          fi
          
-      - name: 🔧 Adjust kernel config for compatibility (为兼容性调整内核配置)
-        run: |
-          set -e
-          cd kernel_workspace/kernel_platform/common
-
-          echo "🚀 Adjusting kernel configuration for KernelSU compatibility..."
-          
-          # 定义一个变量来存储找到的 defconfig 文件路径
-          DEFCONFIG_FILE=""
-
-          # 定义一个可能的 defconfig 文件列表
-          # 根据一加和GKI的常见命名习惯
-          POSSIBLE_DEFCONFIGS=(
-            "arch/arm64/configs/vendor/sm8750_defconfig"
-            "arch/arm64/configs/sm8750_defconfig"
-            "arch/arm64/configs/vendor/gki_defconfig"
-            "arch/arm64/configs/gki_defconfig"
-            "arch/arm64/configs/defconfig"
-          )
-
-          # 遍历列表，查找真实存在的 defconfig 文件
-          for config in "${POSSIBLE_DEFCONFIGS[@]}"; do
-            if [ -f "$config" ]; then
-              DEFCONFIG_FILE="$config"
-              echo "✅ Found defconfig file at: $DEFCONFIG_FILE"
-              break
-            fi
-          done
-
-          # 如果没有找到任何 defconfig 文件，则报错退出
-          if [ -z "$DEFCONFIG_FILE" ]; then
-            echo "❌ Error: Could not find a valid defconfig file. Searched for:"
-            printf " - %s\n" "${POSSIBLE_DEFCONFIGS[@]}"
-            exit 1
-          fi
-
-          # 使用找到的 defconfig 文件路径来禁用冲突的配置
-          # 使用 scripts/config 工具来安全地修改 .config 文件
-          echo "🚀 Disabling CFI and Shadow Call Stack in $DEFCONFIG_FILE..."
-          ./scripts/config --file "$DEFCONFIG_FILE" -d CONFIG_CFI_CLANG
-          ./scripts/config --file "$DEFCONFIG_FILE" -d CONFIG_CFI_PERMISSIVE
-          ./scripts/config --file "$DEFCONFIG_FILE" -d CONFIG_SHADOW_CALL_STACK
-
-          echo "✅ Kernel configuration adjusted successfully."
-          
       # ========================================
       # 第六阶段：内核配置优化
       # ========================================
