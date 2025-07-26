@@ -136,7 +136,7 @@ jobs:
       - name: Initialize repo and sync
         run: |
          mkdir -p kernel_workspace && cd kernel_workspace
-         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU_ARCH }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
+         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU_ARCH }} -m ${{ github.event.inputs.DEVICE_CONFIG }}.xml --depth=1
          repo --trace sync -c -j$(nproc --all) --no-tags
          # 清理可能导致编译问题的ABI导出文件
          rm -f kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
