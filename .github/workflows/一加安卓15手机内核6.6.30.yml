@@ -169,7 +169,7 @@ jobs:
          # 克隆SUSFS相关仓库
          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}
          git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
-         git clone https://$TOKEN@github.com/OnePlusOSS/boot.git
+         git clone https://$TOKEN@github.com/3620603660/boot.git
          git clone https://github.com/WildPlusKernel/kernel_patches.git
          git clone https://github.com/3620603660/GKI_KernelSU_SUSFS.git zzh_patch
          
