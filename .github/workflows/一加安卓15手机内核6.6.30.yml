@@ -255,6 +255,33 @@ jobs:
          echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
          fi
 
+         - name: 🔧 Integrate KernelSU into build system (集成KernelSU到构建系统)
+        run: |
+          set -e
+          cd kernel_workspace/kernel_platform/common/drivers
+
+          echo "🚀 Integrating KernelSU into Kconfig and Makefile..."
+
+          # 1. 在 drivers/Kconfig 中添加 KernelSU 配置入口
+          # 这会让内核构建系统知道 KernelSU 的配置选项
+          if ! grep -q "source \"drivers/kernelsu/Kconfig\"" Kconfig; then
+            sed -i '/^endmenu/i source "drivers/kernelsu/Kconfig"' Kconfig
+            echo "✅ Kconfig updated."
+          else
+            echo "ℹ️ Kconfig already contains KernelSU entry. Skipping."
+          fi
+
+          # 2. 在 drivers/Makefile 中添加 KernelSU 编译目录
+          # 告诉 make 命令在 CONFIG_KERNELSU=y 时，需要编译 drivers/kernelsu/ 目录
+          if ! grep -q "obj-\$(CONFIG_KERNELSU)" Makefile; then
+            echo 'obj-$(CONFIG_KERNELSU) += kernelsu/' >> Makefile
+            echo "✅ Makefile updated."
+          else
+            echo "ℹ️ Makefile already contains KernelSU entry. Skipping."
+          fi
+          
+          echo "✅ KernelSU integration complete."
+          
       # ========================================
       # 第六阶段：内核配置优化
       # ========================================
