@@ -255,32 +255,31 @@ jobs:
          echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
          fi
 
-      - name: 🔧 Integrate KernelSU into build system (集成KernelSU到构建系统)
+      - name: 🔧 Adjust kernel config for compatibility (为兼容性调整内核配置)
         run: |
           set -e
-          cd kernel_workspace/kernel_platform/common/drivers
+          cd kernel_workspace/kernel_platform/common
 
-          echo "🚀 Integrating KernelSU into Kconfig and Makefile..."
-
-          # 1. 在 drivers/Kconfig 中添加 KernelSU 配置入口
-          # 这会让内核构建系统知道 KernelSU 的配置选项
-          if ! grep -q "source \"drivers/kernelsu/Kconfig\"" Kconfig; then
-            sed -i '/^endmenu/i source "drivers/kernelsu/Kconfig"' Kconfig
-            echo "✅ Kconfig updated."
-          else
-            echo "ℹ️ Kconfig already contains KernelSU entry. Skipping."
-          fi
-
-          # 2. 在 drivers/Makefile 中添加 KernelSU 编译目录
-          # 告诉 make 命令在 CONFIG_KERNELSU=y 时，需要编译 drivers/kernelsu/ 目录
-          if ! grep -q "obj-\$(CONFIG_KERNELSU)" Makefile; then
-            echo 'obj-$(CONFIG_KERNELSU) += kernelsu/' >> Makefile
-            echo "✅ Makefile updated."
-          else
-            echo "ℹ️ Makefile already contains KernelSU entry. Skipping."
-          fi
+          echo "🚀 Adjusting kernel configuration for KernelSU compatibility..."
           
-          echo "✅ KernelSU integration complete."
+          # 使用 scripts/config 工具来安全地修改 .config 文件
+          # 这比直接用 sed 修改更可靠
+          
+          # 禁用 Clang CFI (Control Flow Integrity)
+          # 这是导致外部模块编译失败的常见原因
+          ./scripts/config --file arch/arm64/configs/vendor/gki_defconfig -d CONFIG_CFI_CLANG
+          ./scripts/config --file arch/arm64/configs/vendor/gki_defconfig -d CONFIG_CFI_PERMISSIVE
+          ./scripts/config --file arch/arm64/configs/vendor/gki_defconfig -d CONFIG_SHADOW_CALL_STACK
+
+          echo "✅ Disabled CFI and Shadow Call Stack in gki_defconfig."
+          
+          # 如果有其他 defconfig 文件，也需要一并修改
+          if [ -f "arch/arm64/configs/vendor/sm8750_defconfig" ]; then
+            ./scripts/config --file arch/arm64/configs/vendor/sm8750_defconfig -d CONFIG_CFI_CLANG
+            ./scripts/config --file arch/arm64/configs/vendor/sm8750_defconfig -d CONFIG_CFI_PERMISSIVE
+            ./scripts/config --file arch/arm64/configs/vendor/sm8750_defconfig -d CONFIG_SHADOW_CALL_STACK
+            echo "✅ Disabled CFI and Shadow Call Stack in sm8750_defconfig."
+          fi
           
       # ========================================
       # 第六阶段：内核配置优化
