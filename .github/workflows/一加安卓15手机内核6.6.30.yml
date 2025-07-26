@@ -255,7 +255,7 @@ jobs:
          echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
          fi
 
-         - name: 🔧 Integrate KernelSU into build system (集成KernelSU到构建系统)
+      - name: 🔧 Integrate KernelSU into build system (集成KernelSU到构建系统)
         run: |
           set -e
           cd kernel_workspace/kernel_platform/common/drivers
