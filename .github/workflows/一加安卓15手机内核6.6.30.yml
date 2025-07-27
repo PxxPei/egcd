@@ -303,6 +303,13 @@ jobs:
           echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用ZSTD压缩
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用LZ4压缩
 
+          # 启用 ZRAM 及其压缩选项
+          echo "CONFIG_ZRAM=m" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM
+          echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4 压缩
+          echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4KD 压缩
+          echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM ZSTD 压缩
+          echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM 多压缩器支持
+
           # ========================================
           # 高级调度器特性
           # ========================================
@@ -520,3 +527,9 @@ jobs:
          # 从编译输出目录复制 zram.ko
          cp ../common/out/drivers/block/zram/zram.ko AnyKernel3/modules/
          # --- 复制模块结束 ---
+
+      - name: Upload AnyKernel3 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyKernel3_oneplus_ace5pro_${{ env.KSUVER }}_sukisu
+          path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
