@@ -30,14 +30,14 @@ on:
         required: true
         default: '-android15-8-g013ec21bba94-abogki383916444'
       LOCAL_VERSION_SUFFIX:
-        description: '内核版本后缀，例如 -v8 或 -4k (默认: -4k)'
+        description: '内核版本后缀（如-v8，默认：-4k）'
         required: false
-        default: '-4k'
+        default: ''
         type: string
       REMOVE_DEFAULT_4K_SUFFIX:
-        description: '是否删除默认的 -4k 后缀？(勾选则删除)'
+        description: '是否删除默认的 -4k 后缀？（勾选则删除）'
         required: false
-        default: false
+        default: true
         type: boolean
       BUILD_TIMESTAMP:
         description: '内核构建时间 (UTC格式，例如 "Tue Dec 17 23:36:49 UTC 2024")'
@@ -98,7 +98,7 @@ jobs:
         uses: actions/cache@v3
         with:
          path: /home/runner/.ccache
-         key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-ccache-v1
+         key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v2_ksun
          restore-keys: |
           ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-ccache-
           ${{ runner.os }}-${{ github.repository }}-ccache-
@@ -136,7 +136,7 @@ jobs:
       - name: Initialize repo and sync
         run: |
          mkdir -p kernel_workspace && cd kernel_workspace
-         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU_ARCH }} -m ${{ github.event.inputs.DEVICE_CONFIG }}.xml --depth=1
+         repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU_ARCH }} -m ${{ github.event.inputs.DEVICE_CONFIG }}.xml --depth=1
          repo --trace sync -c -j$(nproc --all) --no-tags
          # 清理可能导致编译问题的ABI导出文件
          rm -f kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
@@ -410,18 +410,18 @@ jobs:
       # ========================================
       
       # 拉取并集成sched_ext扩展调度器
-      - name: 拉取并集成 sched_ext 调度器
-        run: |
-         cd kernel_workspace/kernel_platform/
-         git clone --depth=1 https://github.com/3620603660/sched_ext.git
-         cp -r ./sched_ext/* ./common/kernel/sched
-         rm -rf ./sched_ext/.git
+      #  - name: 拉取并集成 sched_ext 调度器
+      #  run: |
+      #   cd kernel_workspace/kernel_platform/
+      #   git clone --depth=1 https://github.com/3620603660/sched_ext.git
+      #   cp -r ./sched_ext/* ./common/kernel/sched
+      #   rm -rf ./sched_ext/.git
 
       # 拉取AFDO（AutoFDO）性能优化配置文件
       - name: 拉取afdo
         run: |
           cd kernel_workspace/kernel_platform/
-          git clone --depth=1 https://github.com/3620603660/afdo.git
+          git clone --depth=1 https://github.com/PxxPei/afdo.git
 
       # ========================================
       # 第九阶段：构建时间戳设置
