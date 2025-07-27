@@ -297,8 +297,6 @@ jobs:
           # ========================================
           # 压缩算法优化配置
           # ========================================
-          echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用LZ4HC压缩
-          echo "CONFIG_CRYPTO_LZ4K=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用LZ4K压缩
           echo "CONFIG_CRYPTO_LZ4KD=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用LZ4KD压缩
           echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用ZSTD压缩
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用LZ4压缩
@@ -308,8 +306,7 @@ jobs:
           echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4 压缩
           echo "CONFIG_ZRAM_LZ4KD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4KD 压缩
           echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM ZSTD 压缩
-          echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM 多压缩器支持
-
+          
           # ========================================
           # 高级调度器特性
           # ========================================
@@ -484,19 +481,9 @@ jobs:
 
          # 编译内核
          make -j$(nproc) $MAKE_ARGS all
+         
 
-         # =======================================================
-         # 新增：编译 zram.ko 模块
-         # =======================================================
-         make -j$(nproc) ${MAKE_ARGS} modules M=drivers/block/zram
-
-         # 创建输出目录并复制内核镜像和模块
-         mkdir -p ../dist
-         cp out/arch/arm64/boot/Image ../dist/
-         # 将编译好的 zram.ko 复制到输出目录
-         cp out/drivers/block/zram/zram.ko ../dist/
-
-         # 创建输出目录并复制内核镜像
+         # 创建输出目录并复制 Image
          mkdir -p ../dist
          cp out/arch/arm64/boot/Image ../dist/
 
@@ -509,27 +496,28 @@ jobs:
       # 第十一阶段：打包和发布
       # ========================================
       
-      # 准备AnyKernel3刷机包
       # ... (在第十一阶段)
       - name: Prepare AnyKernel3 package
         run: |
-         cd kernel_workspace/kernel_platform/dist
-         git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
-         rm -rf AnyKernel3/.git
-         rm -f AnyKernel3/push.sh
+          cd kernel_workspace/kernel_platform/dist
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
+          rm -rf AnyKernel3/.git
+          rm -f AnyKernel3/push.sh
         
-         # 复制内核主镜像
-         cp Image AnyKernel3/
-        
-         # --- 新增：复制 zram.ko 模块 ---
-         # 首先创建存放模块的目录
-         mkdir -p AnyKernel3/modules/
-         # 从编译输出目录复制 zram.ko
-         cp ../common/out/drivers/block/zram/zram.ko AnyKernel3/modules/
-         # --- 复制模块结束 ---
+          # 1. 复制内核主镜像 (已有)
+          cp Image AnyKernel3/
 
+          # 2. 新增：创建模块目录并复制 zram.ko
+          echo "✅ 开始打包 zram.ko 模块..."
+          # AnyKernel3 规范要求模块放在 /modules 目录
+          mkdir -p AnyKernel3/modules
+          # 从编译输出目录找到并复制 zram.ko
+          # 产物路径通常是 out/drivers/block/zram/zram.ko
+          cp ../common/out/drivers/block/zram/zram.ko AnyKernel3/modules/
+          echo "🎉 zram.ko 已成功复制到刷机包！"
+    
       - name: Upload AnyKernel3 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AnyKernel3_oneplus_ace5pro_${{ env.KSUVER }}_sukisu
+          name: AnyKernel3_oneplus_ace5pro_${{ env.KSUVER }}_ksun
           path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
