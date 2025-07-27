@@ -478,6 +478,17 @@ jobs:
          # 编译内核
          make -j$(nproc) $MAKE_ARGS all
 
+         # =======================================================
+         # 新增：编译 zram.ko 模块
+         # =======================================================
+         make -j$(nproc) ${MAKE_ARGS} modules M=drivers/block/zram
+
+         # 创建输出目录并复制内核镜像和模块
+         mkdir -p ../dist
+         cp out/arch/arm64/boot/Image ../dist/
+         # 将编译好的 zram.ko 复制到输出目录
+         cp out/drivers/block/zram/zram.ko ../dist/
+
          # 创建输出目录并复制内核镜像
          mkdir -p ../dist
          cp out/arch/arm64/boot/Image ../dist/
