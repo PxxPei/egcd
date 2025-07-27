@@ -410,12 +410,12 @@ jobs:
       # ========================================
       
       # 拉取并集成sched_ext扩展调度器
-      #  - name: 拉取并集成 sched_ext 调度器
-      #  run: |
-      #   cd kernel_workspace/kernel_platform/
-      #   git clone --depth=1 https://github.com/3620603660/sched_ext.git
-      #   cp -r ./sched_ext/* ./common/kernel/sched
-      #   rm -rf ./sched_ext/.git
+      - name: 拉取并集成 sched_ext 调度器
+        run: |
+         cd kernel_workspace/kernel_platform/
+         git clone https://github.com/3620603660/sched_ext.git
+         cp -r ./sched_ext/* ./common/kernel/sched
+         rm -rf ./sched_ext/.git
 
       # 拉取AFDO（AutoFDO）性能优化配置文件
       - name: 拉取afdo
