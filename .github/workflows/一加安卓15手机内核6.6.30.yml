@@ -503,18 +503,20 @@ jobs:
       # ========================================
       
       # 准备AnyKernel3刷机包
+      # ... (在第十一阶段)
       - name: Prepare AnyKernel3 package
         run: |
-          cd kernel_workspace/kernel_platform/dist
-          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
-          rm -rf AnyKernel3/.git
-          rm -f AnyKernel3/push.sh
-          cp Image AnyKernel3/
-
-      # 上传编译产物
-      - name: Upload AnyKernel3 artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AnyKernel3_oneplus_ace5pro_${{ env.KSUVER }}_ksun
-          path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
-
+         cd kernel_workspace/kernel_platform/dist
+         git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
+         rm -rf AnyKernel3/.git
+         rm -f AnyKernel3/push.sh
+        
+         # 复制内核主镜像
+         cp Image AnyKernel3/
+        
+         # --- 新增：复制 zram.ko 模块 ---
+         # 首先创建存放模块的目录
+         mkdir -p AnyKernel3/modules/
+         # 从编译输出目录复制 zram.ko
+         cp ../common/out/drivers/block/zram/zram.ko AnyKernel3/modules/
+         # --- 复制模块结束 ---
