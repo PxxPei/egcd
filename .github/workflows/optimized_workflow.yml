@@ -28,7 +28,7 @@ on:
       CUSTOM_KERNEL_NAME_TAG:
         description: "自定义内核名称标识，将附加到内核版本号后 (例如: -android15-8-g013ec21bba94-abogki383916444)"
         required: true
-        default: '-android15-8-g013ec21bba94-abogki383916444'
+        default: '-android15-8-g013ec21bba94-abogki383916444-4k'
       LOCAL_VERSION_SUFFIX:
         description: '内核版本后缀（如-v8，默认：-4k）'
         required: false
