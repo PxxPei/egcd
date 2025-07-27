@@ -32,12 +32,12 @@ on:
       local_version:
         description: '内核版本后缀（如-v8，默认：-4k）'
         required: false
-        default: '-4k'
+        default: ''
         type: string
       remove_default_4k:
         description: '是否删除默认的 -4k 后缀？（勾选则删除）'
         required: false
-        default: false
+        default: true
         type: boolean
       kernel_time:
         description: '内核构建时间（UTC格式，例如 "Tue Dec 17 23:36:49 UTC 2024"）'
