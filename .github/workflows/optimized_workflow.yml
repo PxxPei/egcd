@@ -225,9 +225,8 @@ jobs:
          cd ./common/
          # 针对特定设备的补丁调整
          if [[ "${{ github.event.inputs.DEVICE_CONFIG }}" == "oneplus_13" || "${{ github.event.inputs.DEVICE_CONFIG }}" == "oneplus_ace5_pro" ]]; then
-         #  sed -i 's/-32,12 +32,38/-32,11 +32,37/g' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch
-         #  sed -i '/#include <trace\/hooks\/fs.h>/d' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch
-         patch -p1 < "$PATCH_FILE" || true
+           sed -i 's/-32,12 +32,38/-32,11 +32,37/g' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch
+           sed -i '/#include <trace\/hooks\/fs.h>/d' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch
          fi
          
          # 应用主要补丁
@@ -357,7 +356,7 @@ jobs:
       - name: Build Kernel
         run: |
          # 设置编译器路径
-         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r536225/bin:$PATH"
          export PATH="/usr/lib/ccache:$PATH" 
 
          # 设置固定内核构建时间以确保可重现构建
