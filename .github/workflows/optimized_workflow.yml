@@ -348,58 +348,55 @@ jobs:
          export SOURCE_DATE_EPOCH=$(date -d "${{ github.event.inputs.BUILD_TIMESTAMP }}" +%s)
          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
 
+      
       # ========================================
-      # 新增步骤：设置编译器环境
-      # ========================================
-      - name: Set up compiler environment
-        run: |
-         echo "PATH=${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r536225/bin:$PATH" >> $GITHUB_ENV
-         echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
-   
-      # ========================================
-      # 第十阶段：内核编译
+      # 第十阶段：内核编译 (已修正)
       # ========================================
       
-      # 执行内核编译：使用Clang编译器和各种优化选项
       - name: Build Kernel
         run: |
-         # 设置固定内核构建时间以确保可重现构建
-         export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
-         export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-         export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
-         
-         # 设置AFDO配置文件路径用于性能优化
-         export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
-         if [ ! -f "$AFDO_PROFILE" ]; then
-           echo "Error: AFDO profile not found at $AFDO_PROFILE"
-         exit 1
-         fi
+          # 关键修正：在执行任何 make 命令之前，立即设置并导出编译器路径
+          # 这可以确保后续所有命令（包括 gki_defconfig）都能找到 ld.lld
+          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+          export PATH="/usr/lib/ccache:$PATH" 
 
-         # 打印构建信息
-         echo "KERNEL_TIME = $KERNEL_TIME"
-         echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
-         echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
+          # 设置固定内核构建时间以确保可重现构建
+          export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
+          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
+          export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
+          
+          # 设置AFDO配置文件路径用于性能优化
+          export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
+          if [ ! -f "$AFDO_PROFILE" ]; then
+            echo "Error: AFDO profile not found at $AFDO_PROFILE"
+            exit 1
+          fi
 
-         # 设置编译参数
-         export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
-         export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
-         RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
-         PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
-         LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
+          # 打印构建信息
+          echo "KERNEL_TIME = $KERNEL_TIME"
+          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+          echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
 
-         # 进入源码目录并开始编译
-         cd kernel_workspace/kernel_platform/common
+          # 设置编译参数
+          export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
+          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
+          RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
+          PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
+          LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
 
-         # 生成默认配置
-         make -j$(nproc) $MAKE_ARGS gki_defconfig
+          # 进入源码目录并开始编译
+          cd kernel_workspace/kernel_platform/common
 
-         # 编译内核
-         make -j$(nproc) $MAKE_ARGS all
+          # 生成默认配置
+          make -j$(nproc) $MAKE_ARGS gki_defconfig
 
-         # 创建输出目录并复制内核镜像
-         mkdir -p ../dist
-         cp out/arch/arm64/boot/Image ../dist/
-         
+          # 编译内核
+          make -j$(nproc) $MAKE_ARGS all
+
+          # 创建输出目录并复制内核镜像
+          mkdir -p ../dist
+          cp out/arch/arm64/boot/Image ../dist/
+
       # 验证内核构建时间是否正确设置
       - name: 验证内核构建时间
         run: |
