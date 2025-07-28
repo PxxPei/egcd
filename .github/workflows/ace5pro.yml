@@ -21,7 +21,7 @@ on:
       KERNEL_NAME:
         description: "修改内核名称"
         required: true
-        default: '-android15-8-g013ec21bba94-abogki383916444'
+        default: '-android15-8-g013ec21bba94-abogki383916444-4k'
       ENABLE_KPM:
         description: "启用kpm"
         required: false
@@ -30,7 +30,7 @@ on:
       local_version:
         description: '输入内核后缀名（如-v8）'
         required: false
-        default: '-4k'
+        default: ''
         type: string
       kernel_time:
         description: '内核构建时间（UTC 时间字符串，例如 "Tue Dec 17 23:36:49 UTC 2024"）'
@@ -81,7 +81,7 @@ jobs:
         uses: actions/cache@v3
         with:
          path: /home/runner/.ccache
-         key: ${{ runner.os }}-${{ github.repository }}-v2
+         key: ${{ runner.os }}-${{ github.repository }}-v3
          restore-keys: |
           ${{ runner.os }}-${{ github.repository }}-
           ${{ runner.os }}-
@@ -112,7 +112,7 @@ jobs:
       - name: Initialize repo and sync
         run: |
          mkdir kernel_workspace && cd kernel_workspace
-         repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
+         repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU }} -m ${{ github.event.inputs.FEIL }}.xml --depth=1
          repo --trace sync -c -j$(nproc --all) --no-tags
          rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
@@ -151,8 +151,8 @@ jobs:
          cd ./common
          PATCH_FILE=50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch
          if [[ -f "$PATCH_FILE" ]]; then
-         sed -i 's/-32,12 +32,38/-32,11 +32,37/g' "$PATCH_FILE"
-         sed -i '/#include <trace\/hooks\/fs.h>/d' "$PATCH_FILE"
+         # sed -i 's/-32,12 +32,38/-32,11 +32,37/g' "$PATCH_FILE"
+         # sed -i '/#include <trace\/hooks\/fs.h>/d' "$PATCH_FILE"
          patch -p1 < "$PATCH_FILE" || true
          fi
          cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
@@ -160,38 +160,6 @@ jobs:
          patch -s -p1 -F 3 < 1.patch
          echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
    
-      - name: 🔧 Update compression algorithms (更新压缩算法)
-        run: |
-          cd kernel_workspace/kernel_platform/common
-          
-          # 更新LZ4实现
-          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_decompress.c
-          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4defs.h
-          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4_compress.c
-          curl -sSLO https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/lz4/lz4hc_compress.c
-          
-          # 更新Zstd实现
-          zstd_base="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/lib/zstd"
-          mkdir -p lib/zstd && cd lib/zstd
-          curl -sSL $zstd_base/zstd_common_module.c -o common.c
-          curl -sSL $zstd_base/compress/zstd_compress_module.c -o compress.c
-          curl -sSL $zstd_base/decompress/zstd_decompress_module.c -o decompress.c
-          curl -sSL $zstd_base/zstd_compat.h -o compat.h
-          
-          cd ../../..
-          echo "✅ LZ4/Zstd 算法更新完成"
-
-      - name: Apply lz4kd Patches
-        run: |
-         set -e
-         cd kernel_workspace/kernel_platform/common
-         PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_VERSION }}/lz4kd.patch
-         if [[ -f "$PATCH_FILE" ]]; then
-         cp "$PATCH_FILE" ./lz4kd.patch
-         patch -p1 -F 3 < lz4kd.patch || true
-         else
-         echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_VERSION }}"
-         fi
 
       - name: Add SUSFS Configuration Settings
         run: |
@@ -227,17 +195,6 @@ jobs:
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 LZ4 加密
           echo "CONFIG_CRYPTO_842=y" >> ./common/arch/arm64/configs/gki_defconfig
 
-
-          echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用网络调度
-          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用高级 TCP 拥塞控制
-          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BBR TCP 拥塞控制算法
-          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 FQ 网络调度器
-          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
-          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
-          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
-
           # 启用 ZRAM 及其压缩选项
           echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM
           echo "CONFIG_ZRAM_LZ4_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM LZ4 压缩
@@ -245,34 +202,6 @@ jobs:
           echo "CONFIG_ZRAM_ZSTD_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM ZSTD 压缩
           echo "CONFIG_ZRAM_MULTI_COMP=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 ZRAM 多压缩器支持
 
-          echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_IDLE_GOV_MENU=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_WRITEBACK=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_NO_HZ_COMMON=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_CPUIDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
-
-          echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_ENERGY_PERF_POLICY=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # 确保 cpufreq 框架和 schedutil governor 启用
-          echo "CONFIG_CPUFREQ=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPUFREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # 确保 devfreq 框架启用 (用于 GPU 等)
-          echo "CONFIG_DEVFREQ_GOV_SIMPLE_ONDEMAND=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DEVFREQ_GOV_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DEVFREQ_GOV_POWERSAVE=y" >> ./common/arch/arm64/configs/gki_defconfig
-
-          # I/O调度器优化
-          echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline I/O调度器
-          echo "CONFIG_BLK_MQ_IOSCHED_KYBER=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用kyber I/O调度器
-          echo "CONFIG_SCHED_EEVDF=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 EEVDF 调度器
-          echo "CONFIG_BLK_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig # Enable BFQ I/O scheduler
-          echo "CONFIG_BLK_MQ_IOSCHED_NONE=y" >> ./common/arch/arm64/configs/gki_defconfig # Enable NONE I/O scheduler
-          echo "CONFIG_DEFAULT_IOSCHED=\"BFQ\"" >> ./common/arch/arm64/configs/gki_defconfig # Set BFQ as default I/O scheduler
-          echo "CONFIG_IO_URING_ASYNC_WORK=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用 io_uring 异步工作队列
-          echo "CONFIG_PAGE_POOL=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用页面池优化
-          echo "CONFIG_AIO=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用异步块I/O
-
-         
           # Remove check_defconfig
           sed -i 's/check_defconfig//' ./common/build.config.gki
           cd common
@@ -309,17 +238,17 @@ jobs:
          echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.local_version }}"' >> ./common/arch/arm64/configs/gki_defconfig
 
     
-      - name: 拉取并集成 sched_ext 调度器
-        run: |
-         cd kernel_workspace/kernel_platform/
-         git clone https://github.com/3620603660/sched_ext.git
-         cp -r ./sched_ext/* ./common/kernel/sched
-         rm -rf ./sched_ext/.git
+      # - name: 拉取并集成 sched_ext 调度器
+      #  run: |
+      #   cd kernel_workspace/kernel_platform/
+      #   git clone https://github.com/3620603660/sched_ext.git
+      #   cp -r ./sched_ext/* ./common/kernel/sched
+      #   rm -rf ./sched_ext/.git
 
       - name: 拉取afdo
         run: |
           cd kernel_workspace/kernel_platform/
-          git clone https://github.com/3620603660/afdo.git
+          git clone https://github.com/PxxPei/afdo.git
             
       - name: Set build timestamp
         run: |         
