@@ -89,6 +89,14 @@ jobs:
          sudo apt-get update  
          sudo apt-get install -y python3 git curl ccache libelf-dev build-essential
 
+      - name: Set up Clang 19
+        run: |
+          # 下载或更新 Clang 19 编译器
+          curl -sSL https://github.com/llvm/llvm-project/releases/download/llvmorg-19.0.0/clang+llvm-19.0.0-x86_64-linux-gnu-ubuntu-20.04.tar.xz | tar -xJ -C /usr/local
+          echo "/usr/local/clang+llvm-19.0.0-x86_64-linux-gnu-ubuntu-20.04/bin" >> $GITHUB_PATH
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+
       # ========================================
       # 第二阶段：编译缓存配置
       # ========================================
@@ -393,9 +401,9 @@ jobs:
       - name: Build Kernel
         run: |
          # 设置编译器路径
-         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
-         export PATH="/usr/lib/ccache:$PATH" 
-
+          export PATH="/usr/local/clang+llvm-19.0.0-x86_64-linux-gnu-ubuntu-20.04/bin:$PATH"
+          export PATH="/usr/lib/ccache:$PATH"
+          
          # 设置固定内核构建时间以确保可重现构建
          export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
