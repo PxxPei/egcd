@@ -343,10 +343,6 @@ jobs:
       # 执行内核编译：使用Clang编译器和各种优化选项
       - name: Build Kernel
         run: |
-         # 设置编译器路径
-         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r536225/bin:$PATH"
-         export PATH="/usr/lib/ccache:$PATH" 
-
          # 设置固定内核构建时间以确保可重现构建
          export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
