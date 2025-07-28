@@ -305,6 +305,7 @@ jobs:
           echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置BBR为默认TCP拥塞控制
           # 新增下面这行，启用 Cake 调度器
           echo "CONFIG_NET_SCH_CAKE=y" >> ./common/arch/arm64/configs/gki_defconfig      # 启用Cake队列管理算法
           echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
