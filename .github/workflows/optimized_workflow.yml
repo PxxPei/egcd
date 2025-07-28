@@ -180,28 +180,7 @@ jobs:
          cp -f ../zzh_patch/next-patch/* ./KernelSU-Next/ || true
          cp -f ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
          
-         # 复制LZ4优化相关文件
-         cp -rf ../zzh_patch/zram/lz4/* ./common/lib/lz4/ || true
-         cp -rf ../zzh_patch/zram/include/linux/* ./common/include/linux/ || true
-         cp -f ../zzh_patch/zram/${{ inputs.KERNEL_BASE_VERSION }}/lz4_1.10.0.patch ./common/ || true
          
-         cd ./common
-         # 清理可能冲突的LZ4文件
-         for file in \
-         "lib/lz4/lz4_compress.c" \
-         "lib/lz4/lz4_decompress.c" \
-         "lib/lz4/lz4defs.h" \
-         "lib/lz4/lz4hc_compress.c"
-         do
-         if [ -f "$file" ]; then
-         echo "🗑️ 正在删除：$file"
-         rm -f "$file"
-         else
-         echo "⚠️ 文件不存在：$file"
-         fi
-         done
-         
-         cd ../
          # 复制更多优化文件
          cp -f ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
          cp -rf ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux/ || true
@@ -242,18 +221,7 @@ jobs:
          # 修复KernelSU Next兼容性问题
          sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' drivers/kernelsu/kernel_compat.c || true
 
-      # 应用LZ4KD压缩算法补丁
-      - name: Apply lz4kd Patches
-        run: |
-         set -e
-         cd kernel_workspace/kernel_platform/common
-         PATCH_FILE=../../SukiSU_patch/other/zram/zram_patch/${{ inputs.KERNEL_BASE_VERSION }}/lz4kd.patch
-         if [[ -f "$PATCH_FILE" ]]; then
-         cp -f "$PATCH_FILE" ./lz4kd.patch
-         patch -p1 -F 3 < lz4kd.patch || true
-         else
-         echo "❗ lz4kd patch not found for kernel version ${{ inputs.KERNEL_BASE_VERSION }}"
-         fi
+      
 
       # ========================================
       # 第六阶段：内核配置优化
