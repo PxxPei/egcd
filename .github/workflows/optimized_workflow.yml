@@ -180,8 +180,29 @@ jobs:
          cp -f ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/ || true
          cp -f ../zzh_patch/next-patch/* ./KernelSU-Next/ || true
          cp -f ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
-
-          
+         
+         # 复制LZ4优化相关文件
+         cp -rf ../zzh_patch/zram/lz4/* ./common/lib/lz4/ || true
+         cp -rf ../zzh_patch/zram/include/linux/* ./common/include/linux/ || true
+         cp -f ../zzh_patch/zram/${{ inputs.KERNEL_BASE_VERSION }}/lz4_1.10.0.patch ./common/ || true
+         
+         cd ./common
+         # 清理可能冲突的LZ4文件
+         for file in \
+         "lib/lz4/lz4_compress.c" \
+         "lib/lz4/lz4_decompress.c" \
+         "lib/lz4/lz4defs.h" \
+         "lib/lz4/lz4hc_compress.c"
+         do
+         if [ -f "$file" ]; then
+         echo "🗑️ 正在删除：$file"
+         rm -f "$file"
+         else
+         echo "⚠️ 文件不存在：$file"
+         fi
+         done
+         
+         cd ../
          # 复制更多优化文件
          cp -f ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
          cp -rf ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux/ || true
@@ -204,10 +225,10 @@ jobs:
          cd ../
          cd ./common/
          # 针对特定设备的补丁调整
-         if [[ "${{ github.event.inputs.DEVICE_CONFIG }}" == "oneplus_13" || "${{ github.event.inputs.DEVICE_CONFIG }}" == "oneplus_ace5_pro" ]]; then
+         # if [[ "${{ github.event.inputs.DEVICE_CONFIG }}" == "oneplus_13" || "${{ github.event.inputs.DEVICE_CONFIG }}" == "oneplus_ace5_pro" ]]; then
          #  sed -i 's/-32,12 +32,38/-32,11 +32,37/g' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch
          #  sed -i '/#include <trace\/hooks\/fs.h>/d' 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch
-         fi
+         # fi
          
          # 应用主要补丁
          patch -p1 < 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch || true
@@ -216,11 +237,11 @@ jobs:
          patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch || true
          patch -p1 -F 3 < 69_hide_stuff.patch || true
          patch -s -p1 -F 3 < 1.patch || true
+         patch -p1 -F 3 --fuzz=5 < lz4_1.10.0.patch || true
          echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
 
          # 修复KernelSU Next兼容性问题
          sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' drivers/kernelsu/kernel_compat.c || true
-
       
 
       # ========================================
