@@ -215,7 +215,6 @@ jobs:
          patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch || true
          patch -p1 -F 3 < 69_hide_stuff.patch || true
          patch -s -p1 -F 3 < 1.patch || true
-         patch -p1 -F 3 --fuzz=5 < lz4_1.10.0.patch || true
          echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
 
          # 修复KernelSU Next兼容性问题
@@ -294,21 +293,6 @@ jobs:
           echo "CONFIG_FAIR_GROUP_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
           
           # ========================================
-          # I/O调度器优化
-          # ========================================
-          echo "CONFIG_BLK_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用mq-deadline调度器
-          echo "CONFIG_BLK_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig      # 启用BFQ调度器
-          echo "CONFIG_DEFAULT_IOSCHED=\"BFQ\"" >> ./common/arch/arm64/configs/gki_defconfig   # 设置BFQ为默认调度器
-          echo "CONFIG_IO_URING_ASYNC_WORK=y" >> ./common/arch/arm64/configs/gki_defconfig     # 启用io_uring异步工作队列
-          echo "CONFIG_PAGE_POOL=y" >> ./common/arch/arm64/configs/gki_defconfig               # 启用页面池优化
-          echo "CONFIG_AIO=y" >> ./common/arch/arm64/configs/gki_defconfig                     # 启用异步块I/O
-
-          # 多队列I/O调度器
-          echo "CONFIG_MQ_IOSCHED_DEADLINE=y" >> ./common/arch/arm64/configs/gki_defconfig     # 多队列deadline调度器
-          echo "CONFIG_MQ_IOSCHED_BFQ=y" >> ./common/arch/arm64/configs/gki_defconfig          # 多队列BFQ调度器
-          echo "CONFIG_SCSI_MQ_DEFAULT=y" >> ./common/arch/arm64/configs/gki_defconfig         # SCSI多队列默认启用
-          
-          # ========================================
           # 内存管理优化
           # ========================================
           echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -326,7 +310,6 @@ jobs:
           echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
           # 新增下面这行，确保 ECN 开启
           echo "CONFIG_INET_ECN=y" >> ./common/arch/arm64/configs/gki_defconfig          # 确保启用显式拥塞通知
-          echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置BBR为默认TCP拥塞控制
           # 新增下面这行，将 Cake 设为默认网络调度器
           echo "CONFIG_DEFAULT_NET_SCH=\"cake\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置Cake为默认网络调度器
           # 新增下面几行，使用 sed 命令移除其他不再需要的 TCP 拥塞算法，以减小内核体积
