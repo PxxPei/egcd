@@ -211,10 +211,8 @@ jobs:
          echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
 
          # 修复KernelSU Next兼容性问题
-         sed -i 
-'s/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' drivers/kernelsu/kernel_compat.c || true
-
-
+         sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' drivers/kernelsu/kernel_compat.c || true
+         
       # ========================================
       # 第六阶段：内核配置优化
       # ========================================
@@ -282,7 +280,6 @@ jobs:
           echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
           echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
-
 
           # 禁用defconfig检查以允许自定义配置
           sed -i 's/check_defconfig//' ./common/build.config.gki
