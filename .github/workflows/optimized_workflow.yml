@@ -189,8 +189,6 @@ jobs:
          cp -f ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/ || true
          cp -f ../zzh_patch/next-patch/* ./KernelSU-Next/ || true
          cp -f ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
-         
-         
          cd ../
          # 复制更多优化文件
          cp -f ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
@@ -199,6 +197,7 @@ jobs:
          cp -rf ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto/ || true
          cp -rf ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/ || true
          cp -f ../boot/1.patch ./common/ || true
+         cd ./common
          
          # 应用KernelSU补丁
          cd ./KernelSU-Next
