@@ -313,7 +313,7 @@ jobs:
       - name: 10.1 编译内核
         run: |
           # 加入 clang 到 PATH
-          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+          export PATH="/usr/lib/llvm-19/bin:$PATH"
           # 加入 ccache 到 PATH
           export PATH="/usr/lib/ccache:$PATH" 
 
