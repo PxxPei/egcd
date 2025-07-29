@@ -100,7 +100,7 @@ jobs:
       
       # 恢复ccache缓存以加速编译
       - name: Restore ccache
-        uses: actions/cache@v4  # ✅ 从v3更新到v4
+        uses: actions/cache@v3  # ✅ v3
         with:
          path: /home/runner/.ccache
          key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v2_ksun
@@ -382,71 +382,11 @@ jobs:
           cd kernel_workspace/kernel_platform/common
 
           # 生成默认配置
-          make -j$(nproc) $MAKE_ARGS gki_defconfig
-
-          # 编译内核
-          make -j$(nproc --all) O=out \
-            ARCH=arm64 \
-            CROSS_COMPILE=aarch64-linux-gnu- \
-            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-            CC="clang" \
-            LD="ld.lld" \
-            AR="llvm-ar" \
-            NM="llvm-nm" \
-            OBJCOPY="llvm-objcopy" \
-            OBJDUMP="llvm-objdump" \
-            STRIP="llvm-strip" \
-            LLVM=1 \
-            LLVM_IAS=1 \
-            gki_defconfig
-
-          # 编译内核模块
-          make -j$(nproc --all) O=out \
-            ARCH=arm64 \
-            CROSS_COMPILE=aarch64-linux-gnu- \
-            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-            CC="clang" \
-            LD="ld.lld" \
-            AR="llvm-ar" \
-            NM="llvm-nm" \
-            OBJCOPY="llvm-objcopy" \
-            OBJDUMP="llvm-objdump" \
-            STRIP="llvm-strip" \
-            LLVM=1 \
-            LLVM_IAS=1
-
-          # 编译dtbo
-          make -j$(nproc --all) O=out \
-            ARCH=arm64 \
-            CROSS_COMPILE=aarch64-linux-gnu- \
-            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-            CC="clang" \
-            LD="ld.lld" \
-            AR="llvm-ar" \
-            NM="llvm-nm" \
-            OBJCOPY="llvm-objcopy" \
-            OBJDUMP="llvm-objdump" \
-            STRIP="llvm-strip" \
-            LLVM=1 \
-            LLVM_IAS=1 \
-            dtbo.img
-
-          # 编译vendor_boot
-          make -j$(nproc --all) O=out \
-            ARCH=arm64 \
-            CROSS_COMPILE=aarch64-linux-gnu- \
-            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-            CC="clang" \
-            LD="ld.lld" \
-            AR="llvm-ar" \
-            NM="llvm-nm" \
-            OBJCOPY="llvm-objcopy" \
-            OBJDUMP="llvm-objdump" \
-            STRIP="llvm-strip" \
-            LLVM=1 \
-            LLVM_IAS=1 \
-            vendor_boot.img
-
+          make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang-19" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2  gki_defconfig
+          
+          # 编译内核镜像 (Image)
+          make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang-19" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2  Image
+          
           # 创建输出目录并复制内核镜像
           mkdir -p ../dist
           cp out/arch/arm64/boot/Image ../dist/
