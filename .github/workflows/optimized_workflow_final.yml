@@ -318,9 +318,23 @@ jobs:
           export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
           export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
           
-          # 定义通用编译参数
-          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang LD=ld.lld O=out"
-          
+          # 设置 AFDO 配置文件路径
+          export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/egcd/kernel.afdo"
+          if [ ! -f "$AFDO_PROFILE" ]; then
+            echo "Error: AFDO profile not found at $AFDO_PROFILE"
+          exit 1
+          fi
+          # 打印验证
+          echo "KERNEL_TIME = $KERNEL_TIME"
+          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+          echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
+          # 设置一些通用参数（便于后续维护）
+          export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
+          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
+          RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
+          PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
+          LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
+         
           # 进入源码主目录
           cd kernel_workspace/kernel_platform/common
 
