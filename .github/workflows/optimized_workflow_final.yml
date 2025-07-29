@@ -296,7 +296,7 @@ jobs:
       - name: 拉取afdo
         run: |
           cd kernel_workspace/kernel_platform/
-          git clone --depth=1 https://github.com/PxxPei/afdo.git
+          git clone https://github.com/PxxPei/afdo.git
 
       # ========================================
       # 阶段九：构建时间戳设置
@@ -312,8 +312,12 @@ jobs:
       # ========================================
       - name: 10.1 编译内核
         run: |
-          # 设置编译所需的环境变量
-          export PATH="/usr/lib/ccache:/usr/lib/llvm-19/bin:$PATH"
+          # 加入 clang 到 PATH
+          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
+          # 加入 ccache 到 PATH
+          export PATH="/usr/lib/ccache:$PATH" 
+
+          # 设置固定内核构建时间          
           export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
           export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
           export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
@@ -328,6 +332,7 @@ jobs:
           echo "KERNEL_TIME = $KERNEL_TIME"
           echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
           echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
+          
           # 设置一些通用参数（便于后续维护）
           export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
           export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
