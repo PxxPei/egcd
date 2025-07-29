@@ -105,15 +105,16 @@ jobs:
       
       # 恢复ccache缓存以加速编译
       - name: Restore ccache
-        uses: actions/cache@v3
+        uses: actions/cache@v4  # ✅ 从v3更新到v4
         with:
          path: /home/runner/.ccache
-         key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v2_ksun
+         # ✅ 优化缓存key，使其与配置文件哈希关联
+         key: ${{ runner.os }}-${{ github.repository }}-${{ hashFiles('kernel_workspace/kernel_platform/common/arch/arm64/configs/gki_defconfig') }}-v2_ksun
          restore-keys: |
           ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-ccache-
           ${{ runner.os }}-${{ github.repository }}-ccache-
           ${{ runner.os }}-ccache-
-
+    
       # 设置ccache环境变量以优化编译性能
       - name: Setup ccache environment  
         run: |  
@@ -190,26 +191,6 @@ jobs:
          cp -f ../zzh_patch/next-patch/* ./KernelSU-Next/ || true
          cp -f ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
          
-         # 复制LZ4优化相关文件
-         cp -rf ../zzh_patch/zram/lz4/* ./common/lib/lz4/ || true
-         cp -rf ../zzh_patch/zram/include/linux/* ./common/include/linux/ || true
-         cp -f ../zzh_patch/zram/${{ inputs.KERNEL_BASE_VERSION }}/lz4_1.10.0.patch ./common/ || true
-         
-         cd ./common
-         # 清理可能冲突的LZ4文件
-         for file in \
-         "lib/lz4/lz4_compress.c" \
-         "lib/lz4/lz4_decompress.c" \
-         "lib/lz4/lz4defs.h" \
-         "lib/lz4/lz4hc_compress.c"
-         do
-         if [ -f "$file" ]; then
-         echo "🗑️ 正在删除：$file"
-         rm -f "$file"
-         else
-         echo "⚠️ 文件不存在：$file"
-         fi
-         done
          
          cd ../
          # 复制更多优化文件
@@ -246,7 +227,6 @@ jobs:
          patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch || true
          patch -p1 -F 3 < 69_hide_stuff.patch || true
          patch -s -p1 -F 3 < 1.patch || true
-         patch -p1 -F 3 --fuzz=5 < lz4_1.10.0.patch || true
          echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
 
          # 修复KernelSU Next兼容性问题
@@ -292,7 +272,11 @@ jobs:
           echo "CONFIG_LTO_CLANG=y" >> ./common/arch/arm64/configs/gki_defconfig          # 启用Clang LTO优化
           echo "CONFIG_LTO_CLANG_THIN=y" >> ./common/arch/arm64/configs/gki_defconfig     # 启用Thin LTO
           echo "CONFIG_LTO_POLLY=y" >> ./common/arch/arm64/configs/gki_defconfig
-          
+
+          # Makefile中添加O2优化标志
+          echo "KBUILD_CFLAGS += -O2" >> ./common/Makefile  # ✅ 新增
+          echo "KBUILD_AFLAGS += -O2" >> ./common/Makefile  # ✅ 新增
+          echo "CONFIG_O2_OPTIMIZATION=y" >> ./common/arch/arm64/configs/gki_defconfig
           # ========================================
           # 压缩算法优化配置
           # ========================================
