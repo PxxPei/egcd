@@ -1,6 +1,4 @@
-# 工作流名称：构建一加 Ace 5 Pro 内核
 name: ace5pro_kernel_build
-
 # 工作流触发条件：保持原始形式不变，手动触发，支持多种自定义参数
 on:
   workflow_dispatch:
@@ -104,9 +102,11 @@ jobs:
       - name: 2.1 恢复 ccache 缓存
         uses: actions/cache@v4
         with:
-         path: ~/.ccache
-         key: ${{ runner.os }}-ccache-v4
+         path: /home/runner/.ccache
+         key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v2_ksun
          restore-keys: |
+          ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-ccache-
+          ${{ runner.os }}-${{ github.repository }}-ccache-
           ${{ runner.os }}-ccache-
     
       # 设置ccache环境变量以优化编译性能
@@ -199,9 +199,7 @@ jobs:
          echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
 
          # 修复KernelSU Next兼容性问题
-         sed -i 
-'s/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' drivers/kernelsu/kernel_compat.c || true
-
+         sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' drivers/kernelsu/kernel_compat.c || true
          
       # ========================================
       # 阶段六：内核配置优化
