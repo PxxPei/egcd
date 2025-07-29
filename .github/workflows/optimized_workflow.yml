@@ -108,8 +108,7 @@ jobs:
         uses: actions/cache@v4  # ✅ 从v3更新到v4
         with:
          path: /home/runner/.ccache
-         # ✅ 优化缓存key，使其与配置文件哈希关联
-         key: ${{ runner.os }}-${{ github.repository }}-${{ hashFiles('kernel_workspace/kernel_platform/common/arch/arm64/configs/gki_defconfig') }}-v2_ksun
+         key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v2_ksun
          restore-keys: |
           ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-ccache-
           ${{ runner.os }}-${{ github.repository }}-ccache-
