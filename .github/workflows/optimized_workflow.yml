@@ -89,6 +89,15 @@ jobs:
          sudo apt-get update  
          sudo apt-get install -y python3 git curl ccache libelf-dev build-essential
 
+      - name: 📦 Install clang 19.1
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
+          sudo apt-get install -y clang-19 lld-19
+          echo "CC=clang-19" >> $GITHUB_ENV
+          echo "CXX=clang++-19" >> $GITHUB_ENV
+
       
       # ========================================
       # 第二阶段：编译缓存配置
@@ -287,11 +296,14 @@ jobs:
           # ========================================
           # 压缩算法优化配置
           # ========================================
-          echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用LZ4HC压缩
-          echo "CONFIG_CRYPTO_LZ4K=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用LZ4K压缩
+          echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用LZ4HC压缩        # 启用LZ4K压缩
           echo "CONFIG_CRYPTO_LZ4KD=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用LZ4KD压缩
           echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用ZSTD压缩
           echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用LZ4压缩
+
+          echo "CONFIG_F2FS_FS_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_F2FS_FS_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_F2FS_FS_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig
 
           # 禁用defconfig检查以允许自定义配置
           sed -i 's/check_defconfig//' ./common/build.config.gki
@@ -357,8 +369,8 @@ jobs:
         run: |
           # 关键修正：在执行任何 make 命令之前，立即设置并导出编译器路径
           # 这可以确保后续所有命令（包括 gki_defconfig）都能找到 ld.lld
-          export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r510928/bin:$PATH"
-          export PATH="/usr/lib/ccache:$PATH" 
+          export PATH="/usr/lib/ccache:$PATH"
+          export PATH="/usr/lib/llvm-19/bin:$PATH" 
 
           # 设置固定内核构建时间以确保可重现构建
           export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
