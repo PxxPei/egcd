@@ -84,15 +84,22 @@ jobs:
          sudo apt-get install -y --no-install-recommends python3 git curl ccache libelf-dev build-essential
 
       - name: 1.5 安装 Clang 19 工具链
+      - name: 📦 Install and Setup Clang 19.0.0 compiler environment
         run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 19
-          sudo apt-get install -y clang-19 lld-19
-          # 将Clang路径添加到PATH，以便后续编译使用
-          echo "CC=clang-19" >> $GITHUB_ENV
-          echo "CXX=clang++-19" >> $GITHUB_ENV
-      
+         # 1. 下载 Clang 压缩包
+         wget -q --show-progress https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz
+         
+         # 2. 解压 Clang 压缩包
+         tar -xf Clang-19.0.0git-20240723.tar.gz
+         
+         # 3. 配置Clang路径
+         echo "PATH=$(pwd)/Clang-19.0.0git-20240723/bin:\$PATH" >> $GITHUB_ENV
+         echo "CC=$(pwd)/Clang-19.0.0git-20240723/bin/clang" >> $GITHUB_ENV
+         echo "CXX=$(pwd)/Clang-19.0.0git-20240723/bin/clang++" >> $GITHUB_ENV
+         echo "LD=$(pwd)/Clang-19.0.0git-20240723/bin/ld.lld" >> $GITHUB_ENV
+         echo "HOSTLD=$(pwd)/Clang-19.0.0git-20240723/bin/ld.lld" >> $GITHUB_ENV
+         echo "LDSHARED=$(pwd)/Clang-19.0.0git-20240723/bin/ld.lld" >> $GITHUB_ENV
+         
       # ========================================
       # 阶段二：编译缓存配置
       # ========================================
@@ -293,10 +300,10 @@ jobs:
       #    rm -rf ./sched_ext/.git
 
       # 拉取AFDO（AutoFDO）性能优化配置文件
-      #- name: 拉取afdo
-      #  run: |
-      #    cd kernel_workspace/kernel_platform/
-      #    git clone https://github.com/PxxPei/afdo.git
+      - name: 拉取afdo
+        run: |
+          cd kernel_workspace/kernel_platform/
+          git clone https://github.com/PxxPei/afdo.git
 
       # ========================================
       # 阶段九：构建时间戳设置
@@ -312,6 +319,13 @@ jobs:
       # ========================================
       - name: 10.1 编译内核
         run: |
+          # 打印环境变量以验证
+          echo "Current PATH: $PATH"
+          echo "Current CC: $CC"
+          echo "Current CXX: $CXX"
+          echo "Current LD: $LD"
+          echo "Current HOSTLD: $HOSTLD"
+          
           # 加入 clang 到 PATH
           export PATH="/usr/lib/llvm-19/bin:$PATH"
           # 加入 ccache 到 PATH
@@ -320,22 +334,22 @@ jobs:
           # 设置固定内核构建时间          
           export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
           export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-          # export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
+          export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
           
           # 设置 AFDO 配置文件路径
-          # export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
-          # if [ ! -f "$AFDO_PROFILE" ]; then
-          #   echo "Error: AFDO profile not found at $AFDO_PROFILE"
-          # exit 1
-          # fi
+          export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
+          if [ ! -f "$AFDO_PROFILE" ]; then
+              echo "Error: AFDO profile not found at $AFDO_PROFILE"
+          exit 1
+          fi
           
           # 打印验证
           echo "KERNEL_TIME = $KERNEL_TIME"
           echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
-          # echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
+          echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
           
           # 设置一些通用参数（便于后续维护）
-          # export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
+          export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
           export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
           RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
           PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
