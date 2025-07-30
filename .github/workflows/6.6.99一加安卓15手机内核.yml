@@ -1,8 +1,3 @@
-# OnePlus Ace5 Pro 内核构建工作流配置文件
-# 集成了 KernelSU Next、SUSFS、性能优化和高级调度器
-# 作者：Manus AI
-# 最后更新：2025年7月
-
 name: ace5pro_kernel_6.6.99
 
 # 工作流触发条件：手动触发，支持多种自定义参数
@@ -91,17 +86,30 @@ jobs:
          
       - name: 📦 Install clang 19.1
         run: |
-          wget https://apt.llvm.org/llvm.sh -O /tmp/llvm.sh # 下载到临时目录
-          chmod +x /tmp/llvm.sh
-          sudo /tmp/llvm.sh 19
-          sudo apt-get update # 更新apt源，确保能找到新添加的llvm仓库中的包
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
           sudo apt-get install -y clang-19 lld-19
-
-          # 验证clang是否在PATH中，通常apt安装后会自动处理
-          # which clang-19
           echo "CC=clang-19" >> $GITHUB_ENV
           echo "CXX=clang++-19" >> $GITHUB_ENV
           
+      # 设置固定的Clang 19.0.0编译环境
+      - name: Setup Clang 19.0.0 compiler environment
+        run: |
+          echo "=== 使用 Make 编译内核 (固定使用 Clang 19.0.0) ==="
+          
+          # 设置固定的 Clang 19.0.0 路径
+          WORKSPACE_ROOT="${{ github.workspace }}"
+          CLANG_PATH="${WORKSPACE_ROOT}/clang/clang-19.0.0/bin"
+          echo "ℹ️ 使用固定的 Clang 路径: ${CLANG_PATH}"
+          
+          # 检查Clang编译器是否存在
+          if [ ! -x "${CLANG_PATH}/clang" ]; then
+              echo "❌ 错误: 无法在指定路径找到 Clang 编译器: ${CLANG_PATH}/clang"
+              echo "请确保 Clang 19.0.0 已正确安装在 ${WORKSPACE_ROOT}/clang/clang-19.0.0/"
+              exit 1
+          fi
+
       # ========================================
       # 第二阶段：编译缓存配置
       # ========================================
@@ -325,10 +333,10 @@ jobs:
       #    rm -rf ./sched_ext/.git
 
       # 拉取AFDO（AutoFDO）性能优化配置文件
-      #- name: 拉取afdo
-      #  run: |
-      #    cd kernel_workspace/kernel_platform/
-      #    git clone --depth=1 https://github.com/PxxPei/afdo.git
+      - name: 拉取afdo
+        run: |
+          cd kernel_workspace/kernel_platform/
+          git clone --depth=1 https://github.com/PxxPei/afdo.git
 
       # ========================================
       # 第九阶段：构建时间戳设置
@@ -355,22 +363,22 @@ jobs:
           # 设置固定内核构建时间          
           export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
           export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
-          # export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
+          export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s)
           
           # 设置 AFDO 配置文件路径
-          # export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
-          # if [ ! -f "$AFDO_PROFILE" ]; then
-          #   echo "Error: AFDO profile not found at $AFDO_PROFILE"
-          # exit 1
-          # fi
+          export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
+          if [ ! -f "$AFDO_PROFILE" ]; then
+            echo "Error: AFDO profile not found at $AFDO_PROFILE"
+          exit 1
+          fi
           
           # 打印验证
           echo "KERNEL_TIME = $KERNEL_TIME"
           echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
-          # echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
+          echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
           
           # 设置一些通用参数（便于后续维护）
-          # export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
+          export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
           export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
           RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
           PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
@@ -380,10 +388,10 @@ jobs:
           cd kernel_workspace/kernel_platform/common
 
           # 步骤 1: 生成 .config 配置文件
-          make $MAKE_ARGS gki_defconfig
+          make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang-19" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2  gki_defconfig
 
           # 步骤 2: 【关键修正】编译内核镜像 (Image)，而不是 'all'，解决 dtbo.img 错误
-          make -j$(nproc) $MAKE_ARGS Image
+          make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang-19" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2  Image
 
           # 步骤 3: 验证编译产物是否存在
           if [ ! -f "out/arch/arm64/boot/Image" ]; then
