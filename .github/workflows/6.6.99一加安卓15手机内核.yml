@@ -343,10 +343,10 @@ jobs:
       - name: Build Kernel
         run: |
           # 加入 clang 到 PATH
-          export PATH="/usr/lib/llvm-19/bin:$PATH"
+          export PATH="$(pwd)/Clang-19.0.0git-20240723/bin:$PATH"
           # 加入 ccache 到 PATH
-          export PATH="/usr/lib/ccache:$PATH" 
-
+          export PATH="/usr/lib/ccache:$PATH"
+          
           # 设置固定内核构建时间          
           export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
           export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
