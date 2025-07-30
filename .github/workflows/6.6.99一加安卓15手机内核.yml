@@ -348,6 +348,12 @@ jobs:
           export PATH="$(pwd)/Clang-19.0.0git-20240723/bin:$PATH"
           # 加入 ccache 到 PATH
           export PATH="/usr/lib/ccache:$PATH"
+          # 打印环境变量以验证
+          echo "Current PATH: $PATH"
+          echo "Current CC: $CC"
+          echo "Current CXX: $CXX"
+          echo "Current LD: $LD"
+          echo "Current HOSTLD: $HOSTLD"
           
           # 设置固定内核构建时间          
           export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
@@ -361,7 +367,7 @@ jobs:
           exit 1
           fi
           
-          # 打印验证
+          
           echo "KERNEL_TIME = $KERNEL_TIME"
           echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
           echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
