@@ -83,19 +83,20 @@ jobs:
         run: |  
          sudo apt-get update  
          sudo apt-get install -y python3 git curl ccache libelf-dev build-essential
-         
+      
       - name: 📦 Install and Setup Clang 19.0.0 compiler environment
         run: |
          # 下载 Clang 19.0.0 源代码
          CLANG_DOWNLOAD_URL="https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz"
          wget "${CLANG_DOWNLOAD_URL}"
          tar -xzf "Clang-19.0.0git-20240723.tar.gz"
-     
+    
          # 设置安装路径
          INSTALL_PATH="${{ github.workspace }}/clang/clang-19.0.0"
          mkdir -p "${INSTALL_PATH}"
     
-         # 解压到安装路径
+         # 将解压后的整个目录内容移动到安装路径
+         # 注意：源路径末尾的斜杠很重要，它确保只移动目录内容，而不是目录本身
          mv Clang-19.0.0git-20240723/* "${INSTALL_PATH}/"
     
          # 设置环境变量
