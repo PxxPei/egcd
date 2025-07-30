@@ -86,31 +86,63 @@ jobs:
       
       - name: 📦 Install and Setup Clang 19.0.0 compiler environment
         run: |
-         # 下载 Clang 19.0.0 源代码
-         CLANG_DOWNLOAD_URL="https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz"
-         wget "${CLANG_DOWNLOAD_URL}"
-         tar -xzf "Clang-19.0.0git-20240723.tar.gz"
+         echo "🚀 开始安装 Clang 19.0.0 ..."
+
+         # 1. 下载 Clang 压缩包
+         wget -q --show-progress https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz
+         if [ $? -ne 0 ]; then
+           echo "::error::下载 Clang 压缩包失败。请检查 URL 或网络连接。"
+           exit 1
+         fi
+         echo "✅ Clang 压缩包下载完成: Clang-19.0.0git-20240723.tar.gz"
+
+         # 2. 解压 Clang 压缩包
+         tar -xf Clang-19.0.0git-20240723.tar.gz
+         if [ $? -ne 0 ]; then
+           echo "::error::解压 Clang 压缩包失败。请检查文件完整性。"
+           exit 1
+         fi
+         echo "✅ Clang 压缩包解压完成到: Clang-19.0.0git-20240723"
+     
+         # 3. 创建目标安装目录并移动内容
+         sudo mkdir -p /usr/local/clang
+         if [ $? -ne 0 ]; then
+           echo "::error::创建 Clang 安装目录失败: /usr/local/clang。可能需要 sudo 权限。"
+           exit 1
+         fi
     
-         # 设置安装路径
-         INSTALL_PATH="${{ github.workspace }}/clang/clang-19.0.0"
-         mkdir -p "${INSTALL_PATH}"
+         # 移动解压后的 Clang 内容到目标目录
+         # 使用 sudo 是因为 /usr/local/clang 通常需要 root 权限写入
+         sudo mv Clang-19.0.0git-20240723/* /usr/local/clang
+         if [ $? -ne 0 ]; then
+           echo "::error::移动 Clang 内容失败。请检查源目录或目标目录权限。"
+           exit 1
+         fi
+         echo "✅ Clang 内容已移动到: /usr/local/clang"
+
+         # 4. 清理：删除原始压缩包和解压后的空目录
+         rm Clang-19.0.0git-20240723.tar.gz
+         rmdir Clang-19.0.0git-20240723
+         echo "✅ 清理完成。"
     
-         # 将解压后的整个目录内容移动到安装路径
-         # 注意：源路径末尾的斜杠很重要，它确保只移动目录内容，而不是目录本身
-         mv Clang-19.0.0git-20240723/* "${INSTALL_PATH}/"
-    
-         # 设置环境变量
-         CLANG_PATH="${INSTALL_PATH}/bin"
-         echo "ℹ️ 使用固定的 Clang 路径: ${CLANG_PATH}"
-         echo "CC=${CLANG_PATH}/clang" >> $GITHUB_ENV
-         echo "CXX=${CLANG_PATH}/clang++" >> $GITHUB_ENV
-    
-         # 检查 Clang 编译器是否存在
-         if [ ! -x "${CLANG_PATH}/clang" ]; then
-             echo "❌ 错误: 无法在指定路径找到 Clang 编译器: ${CLANG_PATH}/clang"
-             echo "请确保 Clang 19.0.0 已正确安装在 ${INSTALL_PATH}/"
+         # 5. 设置环境变量，供后续步骤使用
+         # 将 Clang 的 bin 目录添加到 PATH 环境变量中
+         echo "PATH=/usr/local/clang/bin:$PATH" >> $GITHUB_ENV
+         # 设置 CC 和 CXX 环境变量指向 Clang 编译器
+         echo "CC=/usr/local/clang/bin/clang" >> $GITHUB_ENV
+         echo "CXX=/usr/local/clang/bin/clang++" >> $GITHUB_ENV
+         echo "ℹ️ Clang 环境变量已设置。"
+
+         # 6. 验证 Clang 编译器是否可执行
+         CLANG_BIN_PATH="/usr/local/clang/bin/clang"
+         if [ ! -x "${CLANG_BIN_PATH}" ]; then
+             echo "::error::❌ 错误: 无法在指定路径找到 Clang 编译器或其不可执行: ${CLANG_BIN_PATH}"
+             echo "::error::请确保 Clang 已正确安装在 /usr/local/clang/"
              exit 1
          fi
+         echo "✅ Clang 编译器验证成功: ${CLANG_BIN_PATH}"
+         echo "$("${CLANG_BIN_PATH}" --version)"
+ 
 
       # ========================================
       # 第二阶段：编译缓存配置
