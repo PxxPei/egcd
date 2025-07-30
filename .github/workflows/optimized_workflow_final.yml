@@ -83,7 +83,6 @@ jobs:
          sudo apt-get update  
          sudo apt-get install -y --no-install-recommends python3 git curl ccache libelf-dev build-essential
 
-      - name: 1.5 安装 Clang 19 工具链
       - name: 📦 Install and Setup Clang 19.0.0 compiler environment
         run: |
          # 1. 下载 Clang 压缩包
