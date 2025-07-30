@@ -116,11 +116,8 @@ jobs:
     
       # 设置ccache环境变量以优化编译性能
       - name: 2.2 配置 ccache
-        run: |  
-         echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV  
-         echo "USE_CCACHE=1" >> $GITHUB_ENV
-         ccache -M 10G
-         ccache -z
+        run: |
+         ccache -s || true
          
       # ========================================
       # 阶段三：内核源码获取
