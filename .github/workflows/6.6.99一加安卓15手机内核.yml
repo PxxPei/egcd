@@ -96,7 +96,9 @@ jobs:
          echo "PATH=$(pwd)/Clang-19.0.0git-20240723/bin:$PATH" >> $GITHUB_ENV
          echo "CC=$(pwd)/Clang-19.0.0git-20240723/bin/clang" >> $GITHUB_ENV
          echo "CXX=$(pwd)/Clang-19.0.0git-20240723/bin/clang++" >> $GITHUB_ENV
-         
+         echo "LD=$(pwd)/Clang-19.0.0git-20240723/bin/ld.lld" >> $GITHUB_ENV
+         echo "LDSHARED=$(pwd)/Clang-19.0.0git-20240723/bin/ld.lld" >> $GITHUB_ENV
+        
       # ========================================
       # 第二阶段：编译缓存配置
       # ========================================
