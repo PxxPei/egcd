@@ -311,7 +311,6 @@ jobs:
          cd clang19
          wget https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz
          tar -zvxf Clang-19.0.0git-20240723.tar.gz
-         cd..
          
       # ========================================
       # 阶段十：内核编译 (已修正)
@@ -319,14 +318,14 @@ jobs:
       - name: 10.1 编译内核
         run: |
           # 设置环境变量
-          export CLANG_PATH="${{ github.workspace }}/clang19/Clang-19.0.0git-20240723/bin"
+          export CLANG_PATH="${{ github.workspace }}/clang19/bin"
           export PATH="${CLANG_PATH}:${PATH}"
           export PATH="/usr/lib/ccache:${PATH}"
           
-          export KERNEL_TIME="${{ github.event.inputs.kernel_time }}"
+          export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
           export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
           export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s )
-
+          
           # 设置 AFDO 配置文件路径
           export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
           if [ ! -f "$AFDO_PROFILE" ]; then
