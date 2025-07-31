@@ -1,0 +1,299 @@
+name: ace5pro_kernel_6.6上游合并
+
+on:
+  workflow_dispatch:
+    inputs:
+      CPU_ARCH:
+        description: "目标CPU架构分支，例如 sm8750 (默认: sm8750)"
+        required: true
+        default: 'sm8750'
+      DEVICE_CONFIG:
+        description: "设备配置文件名称，例如 oneplus_ace5_pro (默认: oneplus_ace5_pro)"
+        required: true
+        default: 'oneplus_ace5_pro'
+      ANDROID_TARGET_VERSION:
+        description: "目标Android版本，例如 android15 (默认: android15)"
+        required: true
+        default: 'android15'
+      KERNEL_BASE_VERSION:
+        description: "内核基础版本，例如 6.6 (默认: 6.6)"
+        required: true
+        default: '6.6'
+      CUSTOM_KERNEL_NAME_TAG:
+        description: "自定义内核名称标识，将附加到内核版本号后 (例如: -android15-8-g013ec21bba94-abogki383916444)"
+        required: true
+        default: '-android15-8-g013ec21bba94-abogki383916444-4k'
+      LOCAL_VERSION_SUFFIX:
+        description: '内核版本后缀（如-v8，默认：-4k）'
+        required: false
+        default: ''
+        type: string
+      REMOVE_DEFAULT_4K_SUFFIX:
+        description: '是否删除默认的 -4k 后缀？（勾选则删除）'
+        required: false
+        default: true
+        type: boolean
+      BUILD_TIMESTAMP:
+        description: '内核构建时间 (UTC格式，例如 "Tue Dec 17 23:36:49 UTC 2024")'
+        required: false
+        default: 'Tue Dec 17 23:36:49 UTC 2024'
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+      TOKEN: ${{ secrets.TOKEN }}
+    
+    steps:
+      - name: 1.1 最大化构建空间
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 8192
+          temp-reserve-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          
+      - name: 1.2 配置Git用户信息
+        run: |
+         git config --global user.name "github-actions[bot]"
+         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 1.3 检出工作流仓库代码  
+        uses: actions/checkout@v4  
+
+      - name: 1.4 安装构建核心依赖  
+        run: |  
+         sudo apt-get update  
+         sudo apt-get install -y --no-install-recommends python3 git curl ccache libelf-dev build-essential
+
+      - name: 2.1 恢复 ccache 缓存
+        uses: actions/cache@v4
+        with:
+         path: /home/runner/.ccache
+         key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v2_ksun
+         restore-keys: |
+          ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-ccache-
+          ${{ runner.os }}-${{ github.repository }}-ccache-
+          ${{ runner.os }}-ccache-
+    
+      - name: 2.2 配置 ccache
+        run: |  
+         echo "CCACHE_DIR=/home/runner/.ccache" >> $GITHUB_ENV  
+         echo "CCACHE_MAXSIZE=8G" >> $GITHUB_ENV  
+         echo "CCACHE_COMPILERCHECK=%compiler% -dumpmachine; %compiler% -dumpversion" >> $GITHUB_ENV  
+         echo "CCACHE_NOHASHDIR=true" >> $GITHUB_ENV  
+         echo "CCACHE_HARDLINK=true" >> $GITHUB_ENV  
+         echo "CCACHE_BASEDIR=${{ github.workspace }}" >> $GITHUB_ENV  
+         echo "CCACHE_LOGFILE=${{ github.workspace }}/ccache.log" >> $GITHUB_ENV  
+         echo "/usr/lib/ccache" >> $GITHUB_PATH  
+         
+      - name: Show ccache stats
+        run: |
+         ccache -s || true
+         
+      - name: 3.1 安装 repo 工具
+        run: |
+         curl -sSL https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
+         chmod a+x ~/repo
+         sudo mv ~/repo /usr/local/bin/repo
+
+      - name: 3.2 初始化并同步内核源码
+        run: |
+         mkdir -p kernel_workspace && cd kernel_workspace
+         repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU_ARCH }} -m ${{ github.event.inputs.DEVICE_CONFIG }}.xml --depth=1
+         repo sync -c -j$(nproc) --no-tags --no-clone-bundle
+         rm -f kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
+         rm -f kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
+         
+      - name: 4.1 设置 KernelSU Next
+        run: |
+          cd kernel_workspace/kernel_platform
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+          cd KernelSU-Next
+          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
+          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+          sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+
+      - name: 5.1 设置 SUSFS & 应用补丁
+        run: |
+         set -e
+         cd kernel_workspace
+         git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_TARGET_VERSION }}-${{ inputs.KERNEL_BASE_VERSION }}
+         git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
+         git clone --depth=1 https://$TOKEN@github.com/3620603660/boot.git
+         git clone --depth=1 https://github.com/WildPlusKernel/kernel_patches.git
+         git clone --depth=1 https://github.com/3620603660/GKI_KernelSU_SUSFS.git zzh_patch
+         
+         cd kernel_platform
+         cp -f ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch ./common/ || true
+         cp -f ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/ || true
+         cp -f ../zzh_patch/next-patch/* ./KernelSU-Next/ || true
+         cp -f ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
+         cp -f ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
+         cp -f ../boot/1.patch ./common/ || true
+         
+         cd ./KernelSU-Next
+         patch -p1 --forward --fuzz=3 < 10_enable_susfs_for_ksu.patch || true
+         patch -p1 --fuzz=3 --forward < apk_sign.patch || true
+         patch -p1 --fuzz=3 --forward < core_hook.patch || true
+         patch -p1 --fuzz=3 --forward < ksud.patch || true
+         patch -p1 --fuzz=3 --forward < selinux.patch || true
+         patch -p1 --fuzz=3 --forward < rules.c.patch || true
+         patch -p1 --fuzz=3 --forward < sucompat.c.patch || true
+         patch -p1 --fuzz=3 --forward < kernel_compat.c.patch || true
+         patch -p1 --fuzz=3 --forward < min_scope_syscall_hooks_v1.4.patch || true
+         cd ../
+         
+         cd ./common/
+         patch -p1 < 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch || true
+         cp -f ../../kernel_patches/69_hide_stuff.patch ./
+         cp -f ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
+         patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch || true
+         patch -p1 -F 3 < 69_hide_stuff.patch || true
+         patch -s -p1 -F 3 < 1.patch || true
+         echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
+
+         sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' drivers/kernelsu/kernel_compat.c || true
+         
+      - name: 6.1 添加 SUSFS 及性能优化配置
+        run: |
+          cd kernel_workspace/kernel_platform
+          
+          echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          
+          echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
+          
+          echo "CONFIG_LTO_CLANG=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_LTO_CLANG_THIN=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_LTO_POLLY=y" >> ./common/arch/arm64/configs/gki_defconfig
+
+          echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4KD=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
+
+          echo "CONFIG_F2FS_FS_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_F2FS_FS_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_F2FS_FS_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig
+
+          sed -i 's/check_defconfig//' ./common/build.config.gki
+          git add -A && git commit -a -m "BUILD Kernel"
+
+      - name: 7.1 修改内核版本显示名称
+        run: |
+         cd kernel_workspace/kernel_platform
+         sed -i '186s|echo ".*"|echo "${KERNELVERSION}${scm_version}${config_localversion}"|' common/scripts/setlocalversion
+         sed -i "s/\${scm_version}/${{ github.event.inputs.CUSTOM_KERNEL_NAME_TAG }}/g" ./common/scripts/setlocalversion
+         
+      - name: 7.2 设置 CONFIG_LOCALVERSION
+        run: |
+         cd kernel_workspace/kernel_platform
+         echo 'CONFIG_LOCALVERSION="${{ github.event.inputs.LOCAL_VERSION_SUFFIX }}"' >> ./common/arch/arm64/configs/gki_defconfig
+
+      - name: 7.3 删除 CONFIG_LOCALVERSION 中的 -4k 后缀（如果勾选）
+        if: ${{ fromJSON(github.event.inputs.REMOVE_DEFAULT_4K_SUFFIX) }}
+        run: |
+         cd kernel_workspace/kernel_platform
+         sed -i 's/-4k//' ./common/arch/arm64/configs/gki_defconfig
+    
+      - name: 拉取afdo
+        run: |
+          cd kernel_workspace/kernel_platform/
+          git clone https://github.com/PxxPei/afdo.git
+
+      - name: 9.1 设置构建时间戳
+        run: |         
+         export SOURCE_DATE_EPOCH=$(date -d "${{ github.event.inputs.BUILD_TIMESTAMP }}" +%s)
+         echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
+
+      - name: 📦 Install and Setup Clang 19.0.0 compiler environment
+        run: |
+         mkdir -p clang19
+         cd clang19
+         wget https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz
+         tar -zvxf Clang-19.0.0git-20240723.tar.gz
+         
+      - name: 10.1 编译内核
+        run: |
+          export CLANG_PATH="${{ github.workspace }}/clang19/bin"
+          export PATH="${CLANG_PATH}:${PATH}"
+          export PATH="/usr/lib/ccache:${PATH}"
+          
+          export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
+          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
+          export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s )
+          
+          export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
+          if [ ! -f "$AFDO_PROFILE" ]; then
+              echo "Error: AFDO profile not found at $AFDO_PROFILE"
+          exit 1
+          fi
+          
+          echo "KERNEL_TIME = $KERNEL_TIME"
+          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+          echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
+          
+          export CC="ccache clang"
+          export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
+          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
+          RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
+          PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
+          LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
+          
+          cd kernel_workspace/kernel_platform/common
+          rm -rf out
+          
+          make $MAKE_ARGS gki_defconfig
+
+          make -j$(nproc) $MAKE_ARGS all
+          export KBUILD_CFLAGS="-O2 -flto=thin"
+
+          if [ ! -f "out/arch/arm64/boot/Image" ]; then
+            echo "❌ 内核编译失败，未找到 Image 文件！"
+            exit 1
+          fi
+          
+          mkdir -p ../dist
+          cp out/arch/arm64/boot/Image ../dist/
+          echo "✅ 内核编译成功！产物已复制到 dist 目录。"
+          
+      - name: 10.2 验证内核构建时间
+        run: |
+         strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC"
+
+      - name: 11.1 准备 AnyKernel3 刷机包
+        run: |
+          cd kernel_workspace/kernel_platform/dist
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
+          rm -rf AnyKernel3/.git
+          rm -f AnyKernel3/push.sh
+          cp Image AnyKernel3/
+
+      - name: 11.2 上传编译产物到 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyKernel3_${{ github.event.inputs.DEVICE_CONFIG }}_${{ env.KSUVER }}
+          path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
