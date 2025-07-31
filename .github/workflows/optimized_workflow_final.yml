@@ -305,6 +305,12 @@ jobs:
          export SOURCE_DATE_EPOCH=$(date -d "${{ github.event.inputs.BUILD_TIMESTAMP }}" +%s)
          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
 
+      - name: 📦 Install and Setup Clang 19.0.0 compiler environment
+        run: |
+         mkdir -p clang19 && cd clang19
+         wget https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz
+         tar -zvxf Clang-19.0.0git-20240723.tar.gz
+         
       # ========================================
       # 阶段十：内核编译 (已修正)
       # ========================================
