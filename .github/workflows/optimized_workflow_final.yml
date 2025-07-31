@@ -307,9 +307,11 @@ jobs:
 
       - name: 📦 Install and Setup Clang 19.0.0 compiler environment
         run: |
-         mkdir -p clang19 && cd clang19
+         mkdir -p clang19
+         cd clang19
          wget https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz
          tar -zvxf Clang-19.0.0git-20240723.tar.gz
+         cd..
          
       # ========================================
       # 阶段十：内核编译 (已修正)
@@ -317,7 +319,7 @@ jobs:
       - name: 10.1 编译内核
         run: |
           # 设置环境变量
-          export CLANG_PATH="${{ github.workspace }}/clang19/bin"
+          export CLANG_PATH="${{ github.workspace }}/clang19/Clang-19.0.0git-20240723/bin"
           export PATH="${CLANG_PATH}:${PATH}"
           export PATH="/usr/lib/ccache:${PATH}"
           
