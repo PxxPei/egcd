@@ -310,7 +310,7 @@ jobs:
       # ========================================
       - name: 10.1 编译内核
         run: |
-          # 1. 设置环境变量
+          # 设置环境变量
           export CLANG_PATH="${{ github.workspace }}/clang19/bin"
           export PATH="${CLANG_PATH}:${PATH}"
           export PATH="/usr/lib/ccache:${PATH}"
@@ -318,52 +318,48 @@ jobs:
           export KERNEL_TIME="${{ github.event.inputs.kernel_time }}"
           export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
           export SOURCE_DATE_EPOCH=$(date -d "$KERNEL_TIME" +%s )
+
+          # 设置 AFDO 配置文件路径
+          export AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/afdo/kernel.afdo"
+          if [ ! -f "$AFDO_PROFILE" ]; then
+              echo "Error: AFDO profile not found at $AFDO_PROFILE"
+          exit 1
+          fi
           
+          # 打印验证
+          echo "KERNEL_TIME = $KERNEL_TIME"
+          echo "SOURCE_DATE_EPOCH = $SOURCE_DATE_EPOCH"
+          echo "Using KCFLAGS: -Wno-error -fauto-profile=$AFDO_PROFILE"
+          
+          # 设置一些通用参数（便于后续维护）
           export CC="ccache clang"
-          
-          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+          export KCFLAGS="-Wno-error -fauto-profile=$AFDO_PROFILE"
+          export MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
           RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
           PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole \
-          LD=ld.lld HOSTLD=ld.lld SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
+          LD=ld.lld HOSTLD=ld.lld O=out SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
           
-          # 2. 进入源码目录并清理
+          # 进入源码目录并清理
           cd kernel_workspace/kernel_platform/common
           rm -rf out
           
-          # 3. 内核配置流程
-          echo "⚙️ (1/3) 应用基础 GKI 配置..."
-          make O=out ${MAKE_ARGS} gki_defconfig
-          
-          PATCH_CONFIG_ADDON="${{ github.workspace }}/kernel_workspace/SukiSU_patch/configs/gki_defconfig_addon"
-          if [ -f "$PATCH_CONFIG_ADDON" ]; then
-              echo "⚙️ (2/3) 应用 SukiSU 补丁配置..."
-              cat "$PATCH_CONFIG_ADDON" >> out/.config
-              make O=out ${MAKE_ARGS} olddefconfig
-          fi
-          
-          echo "⚙️ (3/3) 启用 ThinLTO 配置..."
-          scripts/config --file out/.config --enable LTO_CLANG_THIN
-          make O=out ${MAKE_ARGS} olddefconfig
-          
-          # 4. 设置最终编译标志
+          # 步骤 1: 生成 .config 配置文件
+          make $MAKE_ARGS gki_defconfig
+
+          # 步骤 2: 【关键修正】编译内核镜像 (Image)，而不是 'all'，解决 dtbo.img 错误
+          make -j$(nproc) $MAKE_ARGS all
           export KBUILD_CFLAGS="-O2 -flto=thin"
-          
-          AFDO_PROFILE="${{ github.workspace }}/kernel_workspace/kernel_platform/common/android/gki/aarch64/afdo/kernel.afdo"
-          if [ -f "$AFDO_PROFILE" ]; then
-            echo "✅ 启用 AutoFDO 优化: $AFDO_PROFILE"
-            export KCFLAGS="-Wno-error -fauto-profile=${AFDO_PROFILE}"
-          else
-            echo "ℹ️ 未找到 AutoFDO Profile，跳过。"
-            export KCFLAGS="-Wno-error"
+
+          # 步骤 3: 验证编译产物是否存在
+          if [ ! -f "out/arch/arm64/boot/Image" ]; then
+            echo "❌ 内核编译失败，未找到 Image 文件！"
+            exit 1
           fi
           
-          # 5. 执行编译
-          echo "🚀 开始最终编译..."
-          make O=out -j$(nproc --all) ${MAKE_ARGS} all
-          
-          # 6. 创建输出目录并复制 Image
+          # 创建输出目录并复制内核镜像
           mkdir -p ../dist
           cp out/arch/arm64/boot/Image ../dist/
+          echo "✅ 内核编译成功！产物已复制到 dist 目录。"
           
       - name: 10.2 验证内核构建时间
         run: |
