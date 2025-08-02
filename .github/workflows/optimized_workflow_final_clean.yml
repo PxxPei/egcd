@@ -199,6 +199,62 @@ jobs:
           echo "CONFIG_F2FS_FS_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_F2FS_FS_ZSTD=y" >> ./common/arch/arm64/configs/gki_defconfig
 
+          # ========================================
+          # 高级调度器特性
+          # ========================================
+          echo "CONFIG_SCHED_CORE=y" >> ./common/arch/arm64/configs/gki_defconfig         # 启用核心调度
+          echo "CONFIG_SCHED_MC=y" >> ./common/arch/arm64/configs/gki_defconfig           # 启用多核调度
+          echo "CONFIG_UCLAMP_TASK=y" >> ./common/arch/arm64/configs/gki_defconfig        # 启用任务利用率限制
+          echo "CONFIG_UCLAMP_MIN_TUNABLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用最小利用率调节
+          echo "CONFIG_UCLAMP_MAX_TUNABLE=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用最大利用率调节
+          echo "CONFIG_SCHED_HRTICK=y" >> ./common/arch/arm64/configs/gki_defconfig       # 启用高分辨率时钟，提升调度精度
+          echo "CONFIG_CPU_IDLE_GOV_LADDER=y" >> ./common/arch/arm64/configs/gki_defconfig # 启用阶梯式空闲状态管理，优化功耗
+          # 确保EEVDF调度器启用 (Linux 6.6.30默认，但仍需确认)
+          echo "CONFIG_SCHED_EEVDF=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # Energy Aware Scheduling (EAS) 优化
+          echo "CONFIG_SCHED_EAS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_GOV_PERFORMANCE=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_GOV_POWERSAVE=n" >> ./common/arch/arm64/configs/gki_defconfig
+
+          # Cgroup v2 调度器接口 (如果需要更细粒度资源控制)
+          echo "CONFIG_CGROUP_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_FAIR_GROUP_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
+          
+          # ========================================
+          # 内存管理优化
+          # ========================================
+          echo "CONFIG_LRU_GEN=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TRANSPARENT_HUGEPAGE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          
+          # ========================================
+          # 网络性能优化 (BBR + Cake + ECN)
+          # ========================================
+          echo "CONFIG_NET_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # 新增下面这行，启用 Cake 调度器
+          echo "CONFIG_NET_SCH_CAKE=y" >> ./common/arch/arm64/configs/gki_defconfig      # 启用Cake队列管理算法
+          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # 新增下面这行，确保 ECN 开启
+          echo "CONFIG_INET_ECN=y" >> ./common/arch/arm64/configs/gki_defconfig          # 确保启用显式拥塞通知
+          # 新增下面这行，将 Cake 设为默认网络调度器
+          echo "CONFIG_DEFAULT_NET_SCH=\"cake\"" >> ./common/arch/arm64/configs/gki_defconfig # 设置Cake为默认网络调度器
+          # 新增下面几行，使用 sed 命令移除其他不再需要的 TCP 拥塞算法，以减小内核体积
+          echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 BIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 CUBIC TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 WESTWOOD TCP 拥塞控制算法
+          echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig # 启用 HTCP TCP 拥塞控制算法
+
+          # ========================================
+          # 功耗管理和电源优化
+          # ========================================
+          echo "CONFIG_CPU_FREQ=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_STAT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_IDLE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DRM_GPU_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_PM_WAKELOCKS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_PM_WAKELOCKS_GC=y" >> ./common/arch/arm64/configs/gki_defconfig
+
           sed -i 's/check_defconfig//' ./common/build.config.gki
           git add -A && git commit -a -m "BUILD Kernel"
 
