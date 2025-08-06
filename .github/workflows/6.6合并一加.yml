@@ -356,6 +356,7 @@ jobs:
           echo "开始编译内核..."
           make $MAKE_ARGS gki_defconfig
           make $MAKE_ARGS -j$(nproc)
+          export KBUILD_CFLAGS="-O2 -flto=thin"
           
           echo "✅ 内核编译完成"
 
@@ -369,6 +370,28 @@ jobs:
             echo "❌ 内核镜像编译失败"
             exit 1
           fi
+
+          mkdir -p ../dist
+          cp out/arch/arm64/boot/Image ../dist/
+          echo "✅ 内核编译成功！产物已复制到 dist 目录。"
+          
+      - name: 10.2 验证内核构建时间
+        run: |
+         strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC"
+
+      - name: 11.1 准备 AnyKernel3 刷机包
+        run: |
+          cd kernel_workspace/kernel_platform/dist
+          git clone https://github.com/3620603660/AnyKernel3.git AnyKernel3 --depth=1
+          rm -rf AnyKernel3/.git
+          rm -f AnyKernel3/push.sh
+          cp Image AnyKernel3/
+
+      - name: 11.2 上传编译产物到 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyKernel3_${{ github.event.inputs.DEVICE_CONFIG }}_${{ env.KSUVER }}
+          path: kernel_workspace/kernel_platform/dist/AnyKernel3/*
           
       - name: 11.2 显示最终 ccache 统计信息
         run: |
