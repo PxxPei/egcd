@@ -22,7 +22,7 @@ on:
       CUSTOM_KERNEL_NAME_TAG:
         description: "自定义内核名称标识，将附加到内核版本号后 (例如: -android15-8-g013ec21bba94-abogki383916444)"
         required: true
-        default: '-android15-8-g013ec21bba94-abogki383916444-4k'
+        default: '-android15-8-g4dc61d72e02f-abogki415959920-4k'
       LOCAL_VERSION_SUFFIX:
         description: '内核版本后缀（如-v8，默认：-4k）'
         required: false
@@ -36,7 +36,7 @@ on:
       BUILD_TIMESTAMP:
         description: '内核构建时间 (UTC格式，例如 "Tue Dec 17 23:36:49 UTC 2024")'
         required: false
-        default: 'Tue Dec 17 23:36:49 UTC 2024'
+        default: 'Tue Dec 12 09:09:59 UTC 2025'
         type: string
 
 env:
