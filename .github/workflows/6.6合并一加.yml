@@ -36,7 +36,7 @@ on:
       BUILD_TIMESTAMP:
         description: '内核构建时间 (UTC格式，例如 "Tue Dec 17 23:36:49 UTC 2024")'
         required: false
-        default: 'Tue Dec 12 09:09:59 UTC 2025'
+        default: 'Mon May 12 09:09:59 UTC 2025'
         type: string
 
 env:
