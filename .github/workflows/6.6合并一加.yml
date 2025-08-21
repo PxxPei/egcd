@@ -242,44 +242,42 @@ jobs:
           CONFIG_F2FS_FS_ZSTD=y
           
           # 高级调度器特性
-          CONFIG_SCHED_CORE=y
-          CONFIG_SCHED_MC=y
-          CONFIG_UCLAMP_TASK=y
-          CONFIG_UCLAMP_MIN_TUNABLE=y
-          CONFIG_UCLAMP_MAX_TUNABLE=y
-          CONFIG_SCHED_HRTICK=y
-          CONFIG_CPU_IDLE_GOV_LADDER=y
-          CONFIG_SCHED_EEVDF=y
-          CONFIG_SCHED_EAS=y
-          CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
-          CONFIG_CPU_FREQ_GOV_PERFORMANCE=n
-          CONFIG_CPU_FREQ_GOV_POWERSAVE=n
-          CONFIG_CGROUP_SCHED=y
-          CONFIG_FAIR_GROUP_SCHED=y
+          CONFIG_SCHED_CORE=y  # 启用核心调度，优化多核处理器任务分配
+          CONFIG_SCHED_MC=y    # 启用多核调度，进一步提升多核性能
+          CONFIG_UCLAMP_TASK=y # 启用任务CPU使用率限制，精细控制CPU频率和功耗
+          CONFIG_UCLAMP_MIN_TUNABLE=y # 允许运行时调整UCLAMP最小限制
+          CONFIG_UCLAMP_MAX_TUNABLE=y # 允许运行时调整UCLAMP最大限制
+          CONFIG_SCHED_HRTICK=y # 启用高精度定时器，减少延迟，提高系统响应性
+          CONFIG_CPU_IDLE_GOV_LADDER=y # CPU空闲状态管理策略，平衡快速唤醒和深度省电
+          CONFIG_SCHED_EEVDF=y # 启用Earliest Eligible Virtual Deadline First (EEVDF) 调度器，Linux 6.6新特性，提供更公平、可预测的调度
+          CONFIG_SCHED_EAS=y   # 启用功耗感知调度 (Energy Aware Scheduling)，结合DVFS优化能效
+          CONFIG_CGROUP_SCHED=y # 启用控制组(cgroup)调度功能，用于资源管理和隔离
+          CONFIG_FAIR_GROUP_SCHED=y # 启用公平组调度，确保cgroup内任务的公平性
           
           # 内存管理优化
-          CONFIG_LRU_GEN=y
-          CONFIG_TRANSPARENT_HUGEPAGE=y
-          CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y
+          CONFIG_LRU_GEN=y # 启用LRU生成算法，高效管理内存，减少页面换入换出开销
+          CONFIG_TRANSPARENT_HUGEPAGE=y # 启用透明大页(THP)，提高内存访问效率
+          CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y # 允许应用程序通过madvise()控制THP行为，提供灵活性
           
           # 网络性能优化
-          CONFIG_NET_SCHED=y
-          CONFIG_NET_SCH_CAKE=y
-          CONFIG_NET_SCH_FQ=y
-          CONFIG_INET_ECN=y
-          CONFIG_DEFAULT_NET_SCH="cake"
-          CONFIG_TCP_CONG_BIC=n
-          CONFIG_TCP_CONG_CUBIC=n
-          CONFIG_TCP_CONG_WESTWOOD=n
-          CONFIG_TCP_CONG_HTCP=n
+          CONFIG_NET_SCHED=y # 启用网络包调度器，实现QoS和流量整形的基础
+          CONFIG_NET_SCH_CAKE=y # 启用CAKE队列管理算法，提供低延迟、公平的带宽分配和拥塞控制
+          CONFIG_NET_SCH_FQ=y # 启用公平队列(FQ)流量整形算法
+          CONFIG_INET_ECN=y # 启用显式拥塞通知(ECN)，有助于平滑管理网络流量
+          CONFIG_DEFAULT_NET_SCH="cake" # 将CAKE设置为默认网络调度器，提升移动网络体验
+          CONFIG_TCP_CONG_BIC=n # 禁用BIC TCP拥塞控制算法
+          CONFIG_TCP_CONG_CUBIC=n # 禁用CUBIC TCP拥塞控制算法
+          CONFIG_TCP_CONG_WESTWOOD=n # 禁用WESTWOOD TCP拥塞控制算法
+          CONFIG_TCP_CONG_HTCP=n # 禁用HTCP TCP拥塞控制算法
+          CONFIG_TCP_CONG_BBR=y # 推荐：启用BBR TCP拥塞控制算法，优化高延迟高带宽网络下的吞吐量和延迟
           
           # 功耗管理和电源优化
-          CONFIG_CPU_FREQ=y
-          CONFIG_CPU_FREQ_STAT=y
-          CONFIG_CPU_IDLE=y
-          CONFIG_DRM_GPU_SCHED=y
-          CONFIG_PM_WAKELOCKS=y
-          CONFIG_PM_WAKELOCKS_GC=y
+          CONFIG_CPU_FREQ=y # 启用CPU频率缩放功能
+          CONFIG_CPU_FREQ_STAT=y # 启用CPU频率统计
+          CONFIG_CPU_IDLE=y # 启用CPU空闲管理，允许CPU进入低功耗状态
+          CONFIG_DRM_GPU_SCHED=y # 启用DRM中的GPU调度器，优化GPU功耗和性能
+          CONFIG_PM_WAKELOCKS=y # 启用唤醒锁管理，防止不必要的耗电
+          CONFIG_PM_WAKELOCKS_GC=y # 启用唤醒锁垃圾回收机制，确保正确释放唤醒锁
           EOF
 
           # 禁用defconfig检查
