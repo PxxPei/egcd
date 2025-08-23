@@ -233,7 +233,6 @@ jobs:
 
           CONFIG_LTO_CLANG=y
           CONFIG_LTO_CLANG_THIN=y
-          CONFIG_LTO_POLLY=y
 
           #==================================================================
           # 2. CPU 调度与功耗管理 (CPU Scheduling & Power Management)
@@ -258,6 +257,13 @@ jobs:
           CONFIG_PM_WAKELOCKS=y
           CONFIG_PM_WAKELOCKS_GC=y
 
+          # 更积极的电源管理
+          CONFIG_PM_AUTOSLEEP=y
+          CONFIG_PM_WAKELOCKS_GC=y
+          CONFIG_PM_RUNTIME=y
+          CONFIG_CPU_IDLE_GOV_MENU=y
+          CONFIG_CPU_IDLE_GOV_TEO=y
+
           #==================================================================
           # 3. 内存管理 (Memory Management)
           #------------------------------------------------------------------
@@ -265,6 +271,10 @@ jobs:
           CONFIG_LRU_GEN=y
           CONFIG_TRANSPARENT_HUGEPAGE=y
           CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y
+
+          # 低内存管理优化
+          CONFIG_ANDROID_LOW_MEMORY_KILLER=y
+          CONFIG_PSI=y
 
           #==================================================================
           # 4. 文件系统与I/O (File Systems & I/O)
@@ -283,6 +293,10 @@ jobs:
           CONFIG_TMPFS_XATTR=y
           CONFIG_QUOTA=y
           CONFIG_QFMT_V2=y
+
+          # I/O 调度器优化
+          CONFIG_IOSCHED_BFQ=y
+          CONFIG_DEFAULT_IOSCHED="bfq"
 
           #==================================================================
           # 5. 网络性能优化 (Network Performance Optimizations)
@@ -314,10 +328,6 @@ jobs:
           CONFIG_NET_SCH_INGRESS=y
           CONFIG_IFB=y
 
-          CONFIG_NET_SCH_TBF=y
-          CONFIG_NET_SCH_SFQ=y
-          CONFIG_NET_SCH_DSMARK=y
-
           CONFIG_NET_CLS_ACT=y
           CONFIG_NET_CLS_U32=y
           CONFIG_NET_EMATCH=y
@@ -332,13 +342,7 @@ jobs:
           net.ipv4.tcp_mtu_probing = 1
           net.ipv4.tcp_fastopen = 3
           net.ipv4.tcp_tw_reuse = 1
-          net.ipv4.tcp_fin_timeout = 30
-          net.ipv4.tcp_keepalive_time = 600
-          net.ipv4.tcp_keepalive_probes = 3
-          net.ipv4.tcp_keepalive_intvl = 60
-          net.ipv4.neigh.default.gc_thresh1 = 1024
-          net.ipv4.neigh.default.gc_thresh2 = 4096
-          net.ipv4.neigh.default.gc_thresh3 = 8192
+          
           EOF
 
           # 禁用defconfig检查
