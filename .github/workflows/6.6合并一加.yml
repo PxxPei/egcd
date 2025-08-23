@@ -260,48 +260,45 @@ jobs:
           CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y # 允许应用程序通过madvise()控制THP行为，提供灵活性
           
           # 网络性能优化
-          CONFIG_NET_SCHED=y # 启用网络包调度器，实现QoS和流量整形的基础
-          CONFIG_NET_SCH_CAKE=y # 启用CAKE队列管理算法，提供低延迟、公平的带宽分配和拥塞控制
-          CONFIG_NET_SCH_FQ=y # 启用公平队列(FQ)流量整形算法
-          CONFIG_INET_ECN=y # 启用显式拥塞通知(ECN)，有助于平滑管理网络流量
-          CONFIG_DEFAULT_NET_SCH="cake" # 将CAKE设置为默认网络调度器，提升移动网络体验
-          CONFIG_TCP_CONG_BIC=n # 禁用BIC TCP拥塞控制算法
-          CONFIG_TCP_CONG_CUBIC=n # 禁用CUBIC TCP拥塞控制算法
-          CONFIG_TCP_CONG_WESTWOOD=n # 禁用WESTWOOD TCP拥塞控制算法
-          CONFIG_TCP_CONG_HTCP=n # 禁用HTCP TCP拥塞控制算法
-          CONFIG_TCP_CONG_BBR=y # 推荐：启用BBR TCP拥塞控制算法，优化高延迟高带宽网络下的吞吐量和延迟
-
-          # 网络性能优化（Linux 6.6.100，假设已集成BBRv3补丁）
           CONFIG_NET=y # 启用网络子系统
+          CONFIG_INET=y # 启用IPv4网络栈
+          CONFIG_IPV6=y # 启用IPv6协议栈，移动网络普遍使用
           CONFIG_NET_SCHED=y # 启用网络包调度器，实现QoS和流量整形的基础
+          CONFIG_DEFAULT_NET_SCH="cake" # 将CAKE设置为默认网络调度器，提升移动网络体验
           CONFIG_NET_SCH_CAKE=y # 启用CAKE队列管理算法，提供低延迟、公平的带宽分配和拥塞控制
           CONFIG_NET_SCH_FQ=y # 启用公平队列(FQ)流量整形算法
           CONFIG_NET_SCH_FQ_CODEL=y # 启用FQ-CoDel智能队列管理，进一步缓解Bufferbloat
           CONFIG_NET_SCH_INGRESS=y # 启用入口(ingress)队列，便于配合IFB做下载整形
-          CONFIG_NET_ACT_MIRRED=y # 支持将流量重定向到IFB/其他设备进行整形
-          CONFIG_NET_ACT_POLICE=y # 启用policer(限速)动作
           CONFIG_NET_CLS_ACT=y # 启用通用流量分类动作
           CONFIG_NET_CLS_U32=y # 启用u32分类器，常用于tc过滤规则
           CONFIG_NET_EMATCH=y # 启用扩展匹配框架(EMATCH)，增强流量匹配能力
+          CONFIG_NET_ACT_MIRRED=y # 支持将流量重定向到IFB/其他设备进行整形
+          CONFIG_NET_ACT_POLICE=y # 启用policer(限速)动作
           CONFIG_IFB=y # 启用IFB虚拟网卡，用于入口整形
           CONFIG_BQL=y # 启用Byte Queue Limits，减少NIC队列时延
-          
-          CONFIG_INET=y # 启用IPv4网络栈
           CONFIG_INET_ECN=y # 启用显式拥塞通知(ECN)，有助于平滑管理网络流量
-          CONFIG_IPV6=y # 启用IPv6协议栈，移动网络普遍使用
-          
+          CONFIG_DEFAULT_TCP_CONG="bbr" # 将BBR(含BBRv3补丁)设置为默认TCP拥塞控制
+          CONFIG_TCP_CONG_BBR=y # 推荐：启用BBR TCP拥塞控制算法，优化高延迟高带宽网络下的吞吐量和延迟
           CONFIG_TCP_CONG_BIC=n # 禁用BIC TCP拥塞控制算法
           CONFIG_TCP_CONG_CUBIC=n # 禁用CUBIC TCP拥塞控制算法
-          CONFIG_TCP_CONG_WESTWOOD=n # 禁用WESTWOOD TCP拥塞控制算法
           CONFIG_TCP_CONG_HTCP=n # 禁用HTCP TCP拥塞控制算法
-          CONFIG_TCP_CONG_BBR=y # 推荐：启用BBR TCP拥塞控制算法，优化高延迟高带宽网络下的吞吐量和延迟
-          CONFIG_DEFAULT_TCP_CONG="bbr" # 将BBR(含BBRv3补丁)设置为默认TCP拥塞控制
-          
+          CONFIG_TCP_CONG_WESTWOOD=n # 禁用WESTWOOD TCP拥塞控制算法
           CONFIG_TCP_FASTOPEN=y # 启用TCP Fast Open以降低握手时延
           CONFIG_TCP_SACK=y # 启用选择性确认(SACK)，提升弱网下的恢复效率
           CONFIG_TCP_TIMESTAMPS=y # 启用TCP时间戳，改善RTT估计
-          
-          CONFIG_DEFAULT_NET_SCH="cake" # 将CAKE设置为默认网络调度器，提升移动网络体验
+
+          # Sysctl Configuration
+          net.ipv4.tcp_ecn = 1
+          net.ipv4.tcp_mtu_probing = 1
+          net.ipv4.neigh.default.gc_thresh1 = 1024
+          net.ipv4.neigh.default.gc_thresh2 = 4096
+          net.ipv4.neigh.default.gc_thresh3 = 8192
+          net.ipv4.tcp_fastopen = 3
+          net.ipv4.tcp_tw_reuse = 1
+          net.ipv4.tcp_fin_timeout = 30
+          net.ipv4.tcp_keepalive_time = 600
+          net.ipv4.tcp_keepalive_probes = 3
+          net.ipv4.tcp_keepalive_intvl = 60
           
           # TMPFS 与配额能力（6.6起tmpfs支持用户/组配额）
           CONFIG_TMPFS=y # 启用TMPFS内存文件系统(用于/dev/shm、/run等，降低I/O时延)
