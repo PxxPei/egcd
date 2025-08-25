@@ -227,106 +227,71 @@ jobs:
           CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
           CONFIG_KSU_SUSFS_SUS_SU=n
           
-          #==================================================================
-          # 1. 编译器优化 (Compiler Optimizations)
-          #------------------------------------------------------------------
-
           CONFIG_LTO_CLANG=y
           CONFIG_LTO_CLANG_THIN=y
 
-          #==================================================================
-          # 2. CPU 调度与功耗管理 (CPU Scheduling & Power Management)
-          #------------------------------------------------------------------
-
-          CONFIG_SCHED_CORE=y
-          CONFIG_SCHED_MC=y
-          CONFIG_SCHED_EEVDF=y
-          CONFIG_SCHED_EAS=y
-          CONFIG_CGROUP_SCHED=y
-          CONFIG_FAIR_GROUP_SCHED=y
-          CONFIG_UCLAMP_TASK=y
-          CONFIG_UCLAMP_MIN_TUNABLE=y
-          CONFIG_UCLAMP_MAX_TUNABLE=y
-          CONFIG_SCHED_HRTICK=y
-
-          CONFIG_CPU_FREQ=y
-          CONFIG_CPU_FREQ_STAT=y
-          CONFIG_CPU_IDLE=y
-          CONFIG_CPU_IDLE_GOV_LADDER=y
-          CONFIG_DRM_GPU_SCHED=y
-          CONFIG_PM_WAKELOCKS=y
-          CONFIG_PM_WAKELOCKS_GC=y
-
-          # 更积极的电源管理
-          CONFIG_PM_AUTOSLEEP=y
-          CONFIG_PM_WAKELOCKS_GC=y
-          CONFIG_PM_RUNTIME=y
-          CONFIG_CPU_IDLE_GOV_MENU=y
-          CONFIG_CPU_IDLE_GOV_TEO=y
-
-          #==================================================================
-          # 3. 内存管理 (Memory Management)
-          #------------------------------------------------------------------
-
-          CONFIG_LRU_GEN=y
-          CONFIG_TRANSPARENT_HUGEPAGE=y
-          CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y
-
-          # 低内存管理优化
-          CONFIG_ANDROID_LOW_MEMORY_KILLER=y
-          CONFIG_PSI=y
-
-          #==================================================================
-          # 4. 文件系统与I/O (File Systems & I/O)
-          #------------------------------------------------------------------
-
-          CONFIG_CRYPTO_LZ4=y
-          CONFIG_CRYPTO_LZ4HC=y
-          CONFIG_CRYPTO_LZ4KD=y
-          CONFIG_CRYPTO_ZSTD=y
-          CONFIG_F2FS_FS_LZ4=y
-          CONFIG_F2FS_FS_LZ4HC=y
-          CONFIG_F2FS_FS_ZSTD=y
-
-          CONFIG_TMPFS=y
-          CONFIG_TMPFS_POSIX_ACL=y
-          CONFIG_TMPFS_XATTR=y
-          CONFIG_QUOTA=y
-          CONFIG_QFMT_V2=y
-
-          # I/O 调度器优化
-          CONFIG_IOSCHED_BFQ=y
-          CONFIG_DEFAULT_IOSCHED="bfq"
-
-          #==================================================================
-          # 5. 网络性能优化 (Network Performance Optimizations)
-          #------------------------------------------------------------------
-
-          CONFIG_NET=y
-          CONFIG_INET=y
-          CONFIG_IPV6=y
-          CONFIG_NET_SCHED=y
-          CONFIG_BQL=y
-
-          CONFIG_DEFAULT_NET_SCH="cake"
-          CONFIG_DEFAULT_TCP_CONG="bbr"
-
-          CONFIG_INET_ECN=y
-          CONFIG_TCP_CONG_BBR=y
-          CONFIG_TCP_FASTOPEN=y
-          CONFIG_TCP_SACK=y
-          CONFIG_TCP_TIMESTAMPS=y
-
-          CONFIG_TCP_CONG_BIC=n
-          CONFIG_TCP_CONG_CUBIC=n
-          CONFIG_TCP_CONG_HTCP=n
-          CONFIG_TCP_CONG_WESTWOOD=n
-
-          CONFIG_NET_SCH_CAKE=y
-          CONFIG_NET_SCH_FQ=y
-          CONFIG_NET_SCH_FQ_CODEL=y
-          CONFIG_NET_SCH_INGRESS=y
-          CONFIG_IFB=y
+          # 调度器优化
+          CONFIG_CGROUP_SCHED=y # 启用cgroup调度
+          CONFIG_FAIR_GROUP_SCHED=y # 启用公平组调度
+          CONFIG_SCHED_CORE=y # 启用核心调度器
+          CONFIG_SCHED_EAS=y # 启用能源感知调度器
+          CONFIG_SCHED_EEVDF=y # 启用EEVDF调度器
+          CONFIG_SCHED_HRTICK=y # 启用高分辨率定时器
+          CONFIG_SCHED_MC=y # 启用多核调度器
+          CONFIG_UCLAMP_MAX_TUNABLE=y # 启用UCLAMP最大可调参数
+          CONFIG_UCLAMP_MIN_TUNABLE=y # 启用UCLAMP最小可调参数
+          CONFIG_UCLAMP_TASK=y # 启用UCLAMP任务限制
+          
+          # CPU频率与电源管理
+          CONFIG_CPU_FREQ=y # 启用CPU频率管理
+          CONFIG_CPU_FREQ_STAT=y # 启用CPU频率统计
+          CONFIG_CPU_IDLE=y # 启用CPU空闲管理
+          CONFIG_CPU_IDLE_GOV_LADDER=y # 启用LADDER空闲调速器
+          CONFIG_CPU_IDLE_GOV_MENU=y # 启用MENU空闲调速器
+          CONFIG_CPU_IDLE_GOV_TEO=y # 启用TEO空闲调速器
+          CONFIG_DRM_GPU_SCHED=y # 启用DRM GPU调度器
+          
+          # 内存管理
+          CONFIG_ANDROID_LOW_MEMORY_KILLER=y # 启用Android低内存杀手
+          CONFIG_LRU_GEN=y # 启用LRU生成算法
+          CONFIG_PSI=y # 启用压力统计信息
+          CONFIG_TRANSPARENT_HUGEPAGE=y # 启用透明大页
+          CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y # 启用透明大页MADVISE
+          
+          # 文件系统与I/O
+          CONFIG_CRYPTO_LZ4=y # 启用LZ4加密/压缩
+          CONFIG_CRYPTO_LZ4HC=y # 启用LZ4HC加密/压缩
+          CONFIG_CRYPTO_LZ4KD=y # 启用LZ4KD加密/压缩
+          CONFIG_CRYPTO_ZSTD=y # 启用ZSTD加密/压缩
+          CONFIG_DEFAULT_IOSCHED="bfq" # 默认I/O调度器
+          CONFIG_F2FS_FS_LZ4=y # F2FS文件系统支持LZ4压缩
+          CONFIG_F2FS_FS_LZ4HC=y # F2FS文件系统支持LZ4HC压缩
+          CONFIG_F2FS_FS_ZSTD=y # F2FS文件系统支持ZSTD压缩
+          CONFIG_TMPFS=y # 启用TMPFS文件系统
+          CONFIG_TMPFS_POSIX_ACL=y # TMPFS支持POSIX ACL
+          CONFIG_TMPFS_XATTR=y # TMPFS支持扩展属性
+          
+          # 网络性能优化
+          CONFIG_BQL=y # 启用BQL (Byte Queue Limits)
+          CONFIG_DEFAULT_NET_SCH="cake" # 默认网络调度器
+          CONFIG_DEFAULT_TCP_CONG="bbr" # 默认TCP拥塞控制算法
+          CONFIG_INET=y # 启用IPv4网络协议
+          CONFIG_INET_ECN=y # 启用显式拥塞通知
+          CONFIG_IPV6=y # 启用IPv6网络协议
+          CONFIG_NET=y # 启用网络支持
+          CONFIG_NET_SCHED=y # 启用网络调度
+          CONFIG_NET_SCH_CAKE=y # 启用CAKE网络调度器
+          CONFIG_NET_SCH_FQ=y # 启用FQ网络调度器
+          CONFIG_NET_SCH_FQ_CODEL=y # 启用FQ_CODEL网络调度器
+          CONFIG_NET_SCH_INGRESS=y # 启用INGRESS网络调度器
+          CONFIG_TCP_CONG_BBR=y # 启用BBR TCP拥塞控制
+          CONFIG_TCP_CONG_BIC=n # 禁用BIC TCP拥塞控制
+          CONFIG_TCP_CONG_CUBIC=n # 禁用CUBIC TCP拥塞控制
+          CONFIG_TCP_CONG_HTCP=n # 禁用HTCP TCP拥塞控制
+          CONFIG_TCP_CONG_WESTWOOD=n # 禁用WESTWOOD TCP拥塞控制
+          CONFIG_TCP_FASTOPEN=y # 启用TCP Fast Open
+          CONFIG_TCP_SACK=y # 启用TCP SACK
+          CONFIG_TCP_TIMESTAMPS=y # 启用TCP时间戳
 
           EOF
 
