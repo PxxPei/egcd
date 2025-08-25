@@ -340,7 +340,6 @@ jobs:
           echo "开始编译内核..."
           make $MAKE_ARGS gki_defconfig
           make $MAKE_ARGS -j$(nproc)
-          export KBUILD_CFLAGS="-O2 -flto=thin"
           
           echo "✅ 内核编译完成"
 
