@@ -229,6 +229,7 @@ jobs:
           
           CONFIG_LTO_CLANG=y
           CONFIG_LTO_CLANG_THIN=y
+          CONFIG_LTO_POLLY=y
 
           # 调度器优化
           CONFIG_CGROUP_SCHED=y # 启用cgroup调度
