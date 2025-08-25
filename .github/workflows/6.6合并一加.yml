@@ -239,9 +239,6 @@ jobs:
           CONFIG_SCHED_EEVDF=y # 启用EEVDF调度器
           CONFIG_SCHED_HRTICK=y # 启用高分辨率定时器
           CONFIG_SCHED_MC=y # 启用多核调度器
-          CONFIG_UCLAMP_MAX_TUNABLE=y # 启用UCLAMP最大可调参数
-          CONFIG_UCLAMP_MIN_TUNABLE=y # 启用UCLAMP最小可调参数
-          CONFIG_UCLAMP_TASK=y # 启用UCLAMP任务限制
           
           # CPU频率与电源管理
           CONFIG_CPU_FREQ=y # 启用CPU频率管理
@@ -253,9 +250,7 @@ jobs:
           CONFIG_DRM_GPU_SCHED=y # 启用DRM GPU调度器
           
           # 内存管理
-          CONFIG_ANDROID_LOW_MEMORY_KILLER=y # 启用Android低内存杀手
           CONFIG_LRU_GEN=y # 启用LRU生成算法
-          CONFIG_PSI=y # 启用压力统计信息
           CONFIG_TRANSPARENT_HUGEPAGE=y # 启用透明大页
           CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y # 启用透明大页MADVISE
           
@@ -268,23 +263,18 @@ jobs:
           CONFIG_F2FS_FS_LZ4=y # F2FS文件系统支持LZ4压缩
           CONFIG_F2FS_FS_LZ4HC=y # F2FS文件系统支持LZ4HC压缩
           CONFIG_F2FS_FS_ZSTD=y # F2FS文件系统支持ZSTD压缩
-          CONFIG_TMPFS=y # 启用TMPFS文件系统
-          CONFIG_TMPFS_POSIX_ACL=y # TMPFS支持POSIX ACL
-          CONFIG_TMPFS_XATTR=y # TMPFS支持扩展属性
           
           # 网络性能优化
           CONFIG_BQL=y # 启用BQL (Byte Queue Limits)
           CONFIG_DEFAULT_NET_SCH="cake" # 默认网络调度器
           CONFIG_DEFAULT_TCP_CONG="bbr" # 默认TCP拥塞控制算法
           CONFIG_INET=y # 启用IPv4网络协议
-          CONFIG_INET_ECN=y # 启用显式拥塞通知
           CONFIG_IPV6=y # 启用IPv6网络协议
           CONFIG_NET=y # 启用网络支持
           CONFIG_NET_SCHED=y # 启用网络调度
           CONFIG_NET_SCH_CAKE=y # 启用CAKE网络调度器
           CONFIG_NET_SCH_FQ=y # 启用FQ网络调度器
           CONFIG_NET_SCH_FQ_CODEL=y # 启用FQ_CODEL网络调度器
-          CONFIG_NET_SCH_INGRESS=y # 启用INGRESS网络调度器
           CONFIG_TCP_CONG_BBR=y # 启用BBR TCP拥塞控制
           CONFIG_TCP_CONG_BIC=n # 禁用BIC TCP拥塞控制
           CONFIG_TCP_CONG_CUBIC=n # 禁用CUBIC TCP拥塞控制
@@ -375,7 +365,6 @@ jobs:
           echo "开始编译内核..."
           make $MAKE_ARGS gki_defconfig
           make $MAKE_ARGS -j$(nproc)
-          export KBUILD_CFLAGS="-O2 -flto=thin"
           
           echo "✅ 内核编译完成"
 
