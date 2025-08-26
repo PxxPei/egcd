@@ -306,12 +306,6 @@ jobs:
           wget -q https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz
           tar -zxf Clang-19.0.0git-20240723.tar.gz
           echo "CLANG_PATH=${{ github.workspace }}/clang19/bin" >> $GITHUB_ENV
-         
-      - name: 4.3 修复 KernelSU 源码兼容性问题
-        run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}
-          sed -i 's/try_umount(\(.*\), false, MNT_DETACH)/try_umount(\1, false, MNT_DETACH, 0)/g' drivers/kernelsu/core_hook.c
-          echo "已自动修复 drivers/kernelsu/core_hook.c 文件。"
 
       - name: 10.1 编译内核
         run: |
