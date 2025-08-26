@@ -127,7 +127,7 @@ jobs:
       - name: 4.1 设置 KernelSU Next
         run: |
           cd ${{ env.KERNEL_PLATFORM_DIR }}
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s l10n_next
+          curl -LSs "https://raw.githubusercontent.com/3620603660/KernelSU-Next/next/kernel/setup.sh" | bash -s l10n_next
           cd KernelSU-Next
           KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
