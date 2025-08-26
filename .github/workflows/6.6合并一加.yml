@@ -370,6 +370,7 @@ jobs:
           make $MAKE_ARGS gki_defconfig
           make $MAKE_ARGS -j$(nproc)
           
+          
           echo "✅ 内核编译完成"
 
       - name: 11.1 显示编译结果
