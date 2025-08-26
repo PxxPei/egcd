@@ -126,90 +126,54 @@ jobs:
          
       - name: 4.1 设置 KernelSU Next
         run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}
-          curl -LSs "https://raw.githubusercontent.com/3620603660/KernelSU-Next/next/kernel/setup.sh" | bash -s l10n_next
+          cd kernel_workspace/kernel_platform
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
           cd KernelSU-Next
           KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
 
-      - name: 5.1 克隆补丁仓库
+      - name: 5.1 设置 SUSFS & 应用补丁
         run: |
-          set -e
-          cd ${{ env.WORKSPACE_DIR }}
-          
-          # 并行克隆仓库以提高效率
-          git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git \
-            -b gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }} &
-          git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git &
-          git clone --depth=1 https://${{ env.TOKEN }}@github.com/3620603660/boot.git &
-          git clone --depth=1 https://github.com/WildPlusKernel/kernel_patches.git &
-          git clone --depth=1 https://github.com/3620603660/GKI_KernelSU_SUSFS.git zzh_patch &
-          git clone --depth=1 https://github.com/PxxPei/afdo.git &
-          
-          # 等待所有克隆完成
-          wait
-          
-      - name: 5.2 复制补丁文件 (优化后)
-        run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}
-          
-          # 定义补丁源目录和目标目录
-          PATCH_SOURCES=(
-            "../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch:./common/"
-            "../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch:./KernelSU-Next/"
-            "../zzh_patch/next-patch/:./KernelSU-Next/"
-            "../susfs4ksu/kernel_patches/fs/:./common/fs/"
-            "../susfs4ksu/kernel_patches/include/linux/:./common/include/linux/"
-            "../boot/1.patch:./common/"
-            "../kernel_patches/69_hide_stuff.patch:./common/"
-            "../kernel_patches/next/scope_min_manual_hooks_v1.4.patch:./common/"
-          )
+         set -e
+         cd kernel_workspace
+         git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_TARGET_VERSION }}-${{ inputs.KERNEL_BASE_VERSION }}
+         git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
+         git clone --depth=1 https://$TOKEN@github.com/3620603660/boot.git
+         git clone --depth=1 https://github.com/WildPlusKernel/kernel_patches.git
+         git clone --depth=1 https://github.com/3620603660/GKI_KernelSU_SUSFS.git zzh_patch
+         
+         cd kernel_platform
+         cp -f ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch ./common/ || true
+         cp -f ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/ || true
+         cp -f ../zzh_patch/next-patch/* ./KernelSU-Next/ || true
+         cp -f ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
+         cp -f ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
+         cp -f ../boot/1.patch ./common/ || true
+         
+         cd ./KernelSU-Next
+         patch -p1 --forward --fuzz=3 < 10_enable_susfs_for_ksu.patch || true
+         patch -p1 --fuzz=3 --forward < apk_sign.patch || true
+         patch -p1 --fuzz=3 --forward < core_hook.patch || true
+         patch -p1 --fuzz=3 --forward < ksud.patch || true
+         patch -p1 --fuzz=3 --forward < selinux.patch || true
+         patch -p1 --fuzz=3 --forward < rules.c.patch || true
+         patch -p1 --fuzz=3 --forward < sucompat.c.patch || true
+         patch -p1 --fuzz=3 --forward < kernel_compat.c.patch || true
+         patch -p1 --fuzz=3 --forward < min_scope_syscall_hooks_v1.4.patch || true
+         cd ../
+         
+         cd ./common/
+         patch -p1 < 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch || true
+         cp -f ../../kernel_patches/69_hide_stuff.patch ./
+         cp -f ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
+         patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch || true
+         patch -p1 -F 3 < 69_hide_stuff.patch || true
+         patch -s -p1 -F 3 < 1.patch || true
+         echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
 
-          for item in "${PATCH_SOURCES[@]}"; do
-            SOURCE="$(echo "$item" | cut -d':' -f1)"
-            DEST="$(echo "$item" | cut -d':' -f2)"
-            echo "复制 $SOURCE 到 $DEST"
-            if [ -d "$SOURCE" ]; then
-              cp -rf "$SOURCE"* "$DEST" || true
-            elif [ -f "$SOURCE" ]; then
-              cp -f "$SOURCE" "$DEST" || true
-            else
-              echo "警告: 源文件或目录 $SOURCE 不存在，跳过。"
-            fi
-          done
-          
-      - name: 5.3 应用 KernelSU 补丁
-        run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}/KernelSU-Next
-          
-          # 应用补丁，忽略失败的补丁
-          for patch in 10_enable_susfs_for_ksu.patch apk_sign.patch core_hook.patch \
-                      ksud.patch selinux.patch rules.c.patch sucompat.c.patch \
-                      kernel_compat.c.patch min_scope_syscall_hooks_v1.4.patch; do
-            if [ -f "$patch" ]; then
-              echo "应用补丁: $patch"
-              patch -p1 --forward --fuzz=3 < "$patch" || echo "补丁 $patch 应用失败，继续..."
-            fi
-          done
-          
-      - name: 5.4 应用内核补丁
-        run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}/common
-          
-          # 应用SUSFS补丁
-          patch -p1 < 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch || true
-          
-          # 应用其他补丁
-          patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch || true
-          patch -p1 -F 3 < 69_hide_stuff.patch || true
-          patch -s -p1 -F 3 < 1.patch || true
-          
-          echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
-
-          # 注释掉可能有问题的函数
-          sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' ../drivers/kernelsu/kernel_compat.c || true
-          
+         sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' drivers/kernelsu/kernel_compat.c || true
+         
       - name: 6.1 添加 SUSFS 及性能优化配置
         run: |
           cd ${{ env.KERNEL_PLATFORM_DIR }}
