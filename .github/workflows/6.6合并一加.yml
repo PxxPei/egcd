@@ -85,7 +85,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v2_ksun
+          key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v2_sukisu
           restore-keys: |
             ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-ccache-
             ${{ runner.os }}-${{ github.repository }}-ccache-
