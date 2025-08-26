@@ -124,90 +124,49 @@ jobs:
           rm -f kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
           rm -f kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
          
-      - name: 4.1 设置 KernelSU Next
+      - name: Set up SukiSU
         run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
-          cd KernelSU-Next
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
-          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+         cd kernel_workspace/kernel_platform
+         curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
+         cd ./KernelSU
+         KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10606)
+         echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+         export KSU_VERSION=$KSU_VERSION
+         sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+         KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10700)
+         echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+         export KSU_VERSION=$KSU_VERSION
 
-      - name: 5.1 克隆补丁仓库
+      - name: Set up SUSFS & apply patches
         run: |
-          set -e
-          cd ${{ env.WORKSPACE_DIR }}
-          
-          # 并行克隆仓库以提高效率
-          git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git \
-            -b gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }} &
-          git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git &
-          git clone --depth=1 https://${{ env.TOKEN }}@github.com/3620603660/boot.git &
-          git clone --depth=1 https://github.com/WildPlusKernel/kernel_patches.git &
-          git clone --depth=1 https://github.com/3620603660/GKI_KernelSU_SUSFS.git zzh_patch &
-          git clone --depth=1 https://github.com/PxxPei/afdo.git &
-          
-          # 等待所有克隆完成
-          wait
-          
-      - name: 5.2 复制补丁文件
-        run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}
-          
-          # 复制SUSFS补丁
-          cp -f ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch ./common/ || true
-          cp -f ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/ || true
-          cp -f ../zzh_patch/next-patch/* ./KernelSU-Next/ || true
-          cp -f ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
-          cp -f ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
-          cp -f ../boot/1.patch ./common/ || true
-          
-          # 复制其他补丁
-          cp -f ../kernel_patches/69_hide_stuff.patch ./common/
-          cp -f ../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./common/
-          
-      - name: 5.3 应用 KernelSU 补丁
-        run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}/KernelSU-Next
-          
-          # 定义补丁列表并循环应用，忽略可能出现的失败
-          for patch_file in \
-            10_enable_susfs_for_ksu.patch \
-            apk_sign.patch \
-            core_hook.patch \
-            ksud.patch \
-            selinux.patch \
-            rules.c.patch \
-            sucompat.c.patch \
-            kernel_compat.c.patch \
-            min_scope_syscall_hooks_v1.4.patch
-          do
-            if [ -f "$patch_file" ]; then
-              echo "正在应用补丁: $patch_file"
-              patch -p1 --forward --fuzz=3 < "$patch_file" || echo "警告：补丁 $patch_file 应用失败，已跳过。"
-            else
-              echo "警告：补丁文件 $patch_file 未找到，已跳过。"
-            fi
-          done
-
-          
-      - name: 5.4 应用内核补丁
-        run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}/common
-          
-          # 应用SUSFS补丁
-          patch -p1 < 50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch || true
-          
-          # 应用其他补丁
-          patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch || true
-          patch -p1 -F 3 < 69_hide_stuff.patch || true
-          patch -s -p1 -F 3 < 1.patch || true
-          
-          echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
-
-          # 注释掉可能有问题的函数
-          sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' ../drivers/kernelsu/kernel_compat.c || true
-          
+         set -e
+         
+         cd kernel_workspace
+         git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}
+         git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
+         git clone https://$TOKEN@github.com/3620603660/boot.git
+         cd kernel_platform
+         cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch ./common/ || true
+         mkdir -p ./common/fs ./common/include/linux ./common/lib ./common/crypto
+         cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
+         cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./common/include/linux || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./common/lib || true
+         cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./common/crypto || true
+         cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./common/lib/ || true
+         cp ../boot/1.patch ./common/
+         cd ./common
+         PATCH_FILE=50_add_susfs_in_gki-${{ inputs.ANDROID_VERSION }}-${{ inputs.KERNEL_VERSION }}.patch
+         # if [[ -f "$PATCH_FILE" ]]; then
+         # sed -i 's/-32,12 +32,38/-32,11 +32,37/g' "$PATCH_FILE"
+         # sed -i '/#include <trace\/hooks\/fs.h>/d' "$PATCH_FILE"
+         # patch -p1 < "$PATCH_FILE" || true
+         fi
+         cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
+         patch -p1 -F 3 < syscall_hooks.patch || true
+         patch -s -p1 -F 3 < 1.patch
+         echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
+         
       - name: 6.1 添加 SUSFS 及性能优化配置
         run: |
           cd ${{ env.KERNEL_PLATFORM_DIR }}
