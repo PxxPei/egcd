@@ -195,7 +195,7 @@ jobs:
           echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
 
           # 注释掉可能有问题的函数
-          # sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' ../drivers/kernelsu/kernel_compat.c || true
+          sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' ../drivers/kernelsu/kernel_compat.c || true
          
       - name: 6.1 添加 SUSFS 及性能优化配置
         run: |
@@ -330,19 +330,6 @@ jobs:
           wget -q https://github.com/ZyCromerZ/Clang/releases/download/19.0.0git-20240723-release/Clang-19.0.0git-20240723.tar.gz
           tar -zxf Clang-19.0.0git-20240723.tar.gz
           echo "CLANG_PATH=${{ github.workspace }}/clang19/bin" >> $GITHUB_ENV
-
-      # 在这里添加新的修复步骤
-      - name: 9.2 修复 try_umount 函数调用错误
-        run: |
-          CORE_HOOK_FILE="${{ env.KERNEL_PLATFORM_DIR }}/common/drivers/kernelsu/core_hook.c"
-          if [ -f "$CORE_HOOK_FILE" ]; then
-            echo "正在修复 $CORE_HOOK_FILE 中的 try_umount 调用..."
-            # 为所有 try_umount(..., ..., MNT_DETACH) 的调用添加第四个参数 0
-            sed -i 's/try_umount(\(.*\), false, MNT_DETACH)/try_umount(\1, false, MNT_DETACH, 0)/g' "$CORE_HOOK_FILE"
-            echo "修复完成。"
-          else
-            echo "警告: 未找到 $CORE_HOOK_FILE 文件，跳过修复。"
-          fi
          
       - name: 10.1 编译内核
         run: |
