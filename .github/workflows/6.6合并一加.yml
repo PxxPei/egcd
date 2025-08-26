@@ -150,21 +150,34 @@ jobs:
           # 等待所有克隆完成
           wait
           
-      - name: 5.2 复制补丁文件
+      - name: 5.2 复制补丁文件 (优化后)
         run: |
           cd ${{ env.KERNEL_PLATFORM_DIR }}
           
-          # 复制SUSFS补丁
-          cp -f ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch ./common/ || true
-          cp -f ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/ || true
-          cp -f ../zzh_patch/next-patch/* ./KernelSU-Next/ || true
-          cp -f ../susfs4ksu/kernel_patches/fs/* ./common/fs/ || true
-          cp -f ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/ || true
-          cp -f ../boot/1.patch ./common/ || true
-          
-          # 复制其他补丁
-          cp -f ../kernel_patches/69_hide_stuff.patch ./common/
-          cp -f ../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./common/
+          # 定义补丁源目录和目标目录
+          PATCH_SOURCES=(
+            "../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}.patch:./common/"
+            "../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch:./KernelSU-Next/"
+            "../zzh_patch/next-patch/:./KernelSU-Next/"
+            "../susfs4ksu/kernel_patches/fs/:./common/fs/"
+            "../susfs4ksu/kernel_patches/include/linux/:./common/include/linux/"
+            "../boot/1.patch:./common/"
+            "../kernel_patches/69_hide_stuff.patch:./common/"
+            "../kernel_patches/next/scope_min_manual_hooks_v1.4.patch:./common/"
+          )
+
+          for item in "${PATCH_SOURCES[@]}"; do
+            SOURCE="$(echo "$item" | cut -d':' -f1)"
+            DEST="$(echo "$item" | cut -d':' -f2)"
+            echo "复制 $SOURCE 到 $DEST"
+            if [ -d "$SOURCE" ]; then
+              cp -rf "$SOURCE"* "$DEST" || true
+            elif [ -f "$SOURCE" ]; then
+              cp -f "$SOURCE" "$DEST" || true
+            else
+              echo "警告: 源文件或目录 $SOURCE 不存在，跳过。"
+            fi
+          done
           
       - name: 5.3 应用 KernelSU 补丁
         run: |
