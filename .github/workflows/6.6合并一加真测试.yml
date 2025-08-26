@@ -124,28 +124,15 @@ jobs:
           rm -f kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
           rm -f kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
          
-      # 删除 -dirty 后缀
-      - name: Force remove -dirty suffix
+      - name: 4.1 设置 KernelSU Next
         run: |
-          cd kernel_workspace/kernel_platform
-          sed -i 's/ -dirty//g' common/scripts/setlocalversion
-          sed -i 's/ -dirty//g' msm-kernel/scripts/setlocalversion
-          sed -i 's/ -dirty//g' external/dtc/scripts/setlocalversion
-          sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')' common/scripts/setlocalversion
-          git add -A
-          git commit -m "Force remove -dirty suffix from kernel version"
-
-      # 添加 SukiSU Ultra
-      - name: Add KernelSU-SukiSU Ultra
-        run: |
-          cd kernel_workspace/kernel_platform
-          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-dev
-          cd ./KernelSU
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10606)
+          cd ${{ env.KERNEL_PLATFORM_DIR }}
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+          cd KernelSU-Next
+          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          export KSU_VERSION=$KSU_VERSION
-          sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
-          
+          sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+
       - name: 5.1 克隆补丁仓库
         run: |
           set -e
@@ -209,7 +196,7 @@ jobs:
 
           # 注释掉可能有问题的函数
           sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' ../drivers/kernelsu/kernel_compat.c || true
-         
+      
       - name: 6.1 添加 SUSFS 及性能优化配置
         run: |
           cd ${{ env.KERNEL_PLATFORM_DIR }}
