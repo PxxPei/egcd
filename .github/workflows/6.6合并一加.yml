@@ -196,7 +196,7 @@ jobs:
 
           # 注释掉可能有问题的函数
           sed -i '/^static inline int ksu_access_ok/,/^}/ s/^/\/\//' ../drivers/kernelsu/kernel_compat.c || true
-         
+          
       - name: 6.1 添加 SUSFS 及性能优化配置
         run: |
           cd ${{ env.KERNEL_PLATFORM_DIR }}
