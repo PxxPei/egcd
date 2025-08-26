@@ -235,35 +235,11 @@ jobs:
           CONFIG_LTO_CLANG_THIN=y
           CONFIG_LTO_POLLY=y
 
-          # 调度器优化
-          CONFIG_CGROUP_SCHED=y # 启用cgroup调度
-          CONFIG_FAIR_GROUP_SCHED=y # 启用公平组调度
-          CONFIG_SCHED_CORE=y # 启用核心调度器
-          CONFIG_SCHED_EAS=y # 启用能源感知调度器
-          CONFIG_SCHED_EEVDF=y # 启用EEVDF调度器
-          CONFIG_SCHED_HRTICK=y # 启用高分辨率定时器
-          CONFIG_SCHED_MC=y # 启用多核调度器
-          
-          # CPU频率与电源管理
-          CONFIG_CPU_FREQ=y # 启用CPU频率管理
-          CONFIG_CPU_FREQ_STAT=y # 启用CPU频率统计
-          CONFIG_CPU_IDLE=y # 启用CPU空闲管理
-          CONFIG_CPU_IDLE_GOV_LADDER=y # 启用LADDER空闲调速器
-          CONFIG_CPU_IDLE_GOV_MENU=y # 启用MENU空闲调速器
-          CONFIG_CPU_IDLE_GOV_TEO=y # 启用TEO空闲调速器
-          CONFIG_DRM_GPU_SCHED=y # 启用DRM GPU调度器
-          
-          # 内存管理
-          CONFIG_LRU_GEN=y # 启用LRU生成算法
-          CONFIG_TRANSPARENT_HUGEPAGE=y # 启用透明大页
-          CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y # 启用透明大页MADVISE
-          
           # 文件系统与I/O
           CONFIG_CRYPTO_LZ4=y # 启用LZ4加密/压缩
           CONFIG_CRYPTO_LZ4HC=y # 启用LZ4HC加密/压缩
           CONFIG_CRYPTO_LZ4KD=y # 启用LZ4KD加密/压缩
           CONFIG_CRYPTO_ZSTD=y # 启用ZSTD加密/压缩
-          CONFIG_DEFAULT_IOSCHED="bfq" # 默认I/O调度器
           CONFIG_F2FS_FS_LZ4=y # F2FS文件系统支持LZ4压缩
           CONFIG_F2FS_FS_LZ4HC=y # F2FS文件系统支持LZ4HC压缩
           CONFIG_F2FS_FS_ZSTD=y # F2FS文件系统支持ZSTD压缩
