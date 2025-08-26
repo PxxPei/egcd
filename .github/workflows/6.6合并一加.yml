@@ -170,15 +170,26 @@ jobs:
         run: |
           cd ${{ env.KERNEL_PLATFORM_DIR }}/KernelSU-Next
           
-          # 应用补丁，忽略失败的补丁
-          for patch in 10_enable_susfs_for_ksu.patch apk_sign.patch core_hook.patch \
-                      ksud.patch selinux.patch rules.c.patch sucompat.c.patch \
-                      kernel_compat.c.patch min_scope_syscall_hooks_v1.4.patch; do
-            if [ -f "$patch" ]; then
-              echo "应用补丁: $patch"
-              patch -p1 --forward --fuzz=3 < "$patch" || echo "补丁 $patch 应用失败，继续..."
+          # 定义补丁列表并循环应用，忽略可能出现的失败
+          for patch_file in \
+            10_enable_susfs_for_ksu.patch \
+            apk_sign.patch \
+            core_hook.patch \
+            ksud.patch \
+            selinux.patch \
+            rules.c.patch \
+            sucompat.c.patch \
+            kernel_compat.c.patch \
+            min_scope_syscall_hooks_v1.4.patch
+          do
+            if [ -f "$patch_file" ]; then
+              echo "正在应用补丁: $patch_file"
+              patch -p1 --forward --fuzz=3 < "$patch_file" || echo "警告：补丁 $patch_file 应用失败，已跳过。"
+            else
+              echo "警告：补丁文件 $patch_file 未找到，已跳过。"
             fi
           done
+
           
       - name: 5.4 应用内核补丁
         run: |
