@@ -87,7 +87,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v3_pro
+          key: ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-v1_pro
           restore-keys: |
             ${{ runner.os }}-${{ github.repository }}-${{ github.ref_name }}-ccache-
             ${{ runner.os }}-${{ github.repository }}-ccache-
@@ -185,14 +185,6 @@ jobs:
           patch -s -p1 -F 3 < 1.patch || true
           patch -p1 -F 3 --fuzz=5 < lz4_1.10.0.patch || true
           echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"         
-
-      - name: Apply Hide Stuff Patches
-        run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}/common
-          cp ../../SukiSU_patch/69_hide_stuff.patch ./
-          echo "正在打隐藏应用补丁"
-          patch -p1 -F 3 < 69_hide_stuff.patch
-          echo "隐藏应用_patch完成"
          
       - name: 设置内核优化配置
         run: |
