@@ -111,15 +111,11 @@ jobs:
 
       - name: 3.2 初始化并同步内核源码
         run: |
-          mkdir -p ${{ env.WORKSPACE_DIR }} && cd ${{ env.WORKSPACE_DIR }}
-          repo init -u https://github.com/3620603660/kernel_manifest.git \
-            -b refs/heads/oneplus/${{ github.event.inputs.CPU_ARCH }} \
-            -m ${{ github.event.inputs.DEVICE_CONFIG }}.xml --depth=1
-          repo sync -c -j$(nproc) --no-tags --no-clone-bundle
-          
-          # 清理不需要的文件
-          rm -f kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
-          rm -f kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports to remove."
+         mkdir kernel_workspace && cd kernel_workspace
+         repo init -u https://github.com/3620603660/kernel_manifest.git -b refs/heads/oneplus/${{ github.event.inputs.CPU_ARCH }} -m ${{ github.event.inputs.DEVICE_CONFIG }}.xml --depth=1
+         repo --trace sync -c -j$(nproc --all) --no-tags
+         rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+         rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
          
       - name: Set up KernelSU Next
         run: |
