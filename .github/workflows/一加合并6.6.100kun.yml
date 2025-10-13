@@ -198,8 +198,7 @@ jobs:
           # 优化后的一加Ace5 Pro (骁龙8e, Android 15, Kernel 6.6.102) 内核配置
           # KernelSU 配置 (保持不变)
           CONFIG_KSU=y
-          CONFIG_KSU_SUSFS_SUS_SU=n
-          CONFIG_KSU_MANUAL_HOOK=y
+          CONFIG_KSU_KPROBES_HOOK=n
           CONFIG_KSU_SUSFS=y
           CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y
           CONFIG_KSU_SUSFS_SUS_PATH=y
@@ -213,7 +212,9 @@ jobs:
           CONFIG_KSU_SUSFS_SPOOF_UNAME=y
           CONFIG_KSU_SUSFS_ENABLE_LOG=y
           CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
+          CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
           CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
+          CONFIG_KSU_SUSFS_SUS_SU=n
           CONFIG_KPM=y
           # CPU和电源管理
           CONFIG_CPU_FREQ=y
