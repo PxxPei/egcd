@@ -239,6 +239,7 @@ jobs:
           CONFIG_ZRAM=y
           CONFIG_ZRAM_LZ4=y
           CONFIG_ZRAM_ZSTD=y
+          CONFIG_ZRAM_MULTI_COMP=y
           CONFIG_ANDROID_LOW_MEMORY_KILLER=y
           # 网络性能优化 (BBR3)
           CONFIG_BQL=y
@@ -259,11 +260,13 @@ jobs:
           CONFIG_TCP_FASTOPEN=y
           CONFIG_TCP_SACK=y
           CONFIG_TCP_TIMESTAMPS=y
-          # ADIOS和O2优化配置
+          # io优化配置
           CONFIG_IO_URING=y
           CONFIG_BLK_MQ=y
           CONFIG_BLK_MQ_PCI=y
-          CONFIG_MQ_IOSCHED_ADIOS=y
+          CONFIG_MQ_IOSCHED_BFQ=y
+          CONFIG_BFQ_GROUP_IOSCHED=y
+          CONFIG_BFQ_ALLOC_BATCH=y
           # 文件系统压缩支持
           CONFIG_F2FS_FS_LZ4=y
           CONFIG_F2FS_FS_LZ4HC=y
@@ -276,7 +279,7 @@ jobs:
           CONFIG_NVME_MULTIPATH=y  
           CONFIG_NVME_TARGET=y
           CONFIG_BT_QCA=y  
-          CONFIG_ARM64_SME=n  
+          CONFIG_ARM64_SME=y  # 建议根据硬件支持和需求考虑启用
           CONFIG_PM_DOMAIN_CPU_GOV=y
 
           CONFIG_CPUFREQ_BOOST=y
