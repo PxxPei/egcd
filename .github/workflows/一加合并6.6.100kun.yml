@@ -1,4 +1,4 @@
-name: ace5pro_kernel_kun6.6合并100
+name: ace5pro_kernel_kun6.6合并10X
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
       DEVICE_CONFIG:
         description: "设备配置文件名称，例如 oneplus_ace5_pro (默认: oneplus_ace5_pro)"
         required: true
-        default: 'oneplus_ace5_pro'
+        default: 'oneplus_ace5_pro_pro'
       ANDROID_TARGET_VERSION:
         description: "目标Android版本，例如 android15 (默认: android15)"
         required: true
