@@ -215,7 +215,7 @@ jobs:
           CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
           CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
           CONFIG_KSU_SUSFS_SUS_SU=n
-          CONFIG_KPM=y
+          
           # CPU和电源管理
           CONFIG_CPU_FREQ=y
           CONFIG_CPU_FREQ_STAT=y
