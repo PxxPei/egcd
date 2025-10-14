@@ -242,6 +242,21 @@ jobs:
           CONFIG_ZRAM_ZSTD=y
           CONFIG_ZRAM_MULTI_COMP=y
           CONFIG_ANDROID_LOW_MEMORY_KILLER=y
+          # zram_bio_discard 优化
+          CONFIG_BLK_DEV_ZRAM_DISCARD=y
+          # 应用冷启动优化
+          CONFIG_SCHED_TUNE=y
+          CONFIG_SCHED_CORE_PRIO=y
+          CONFIG_CPU_FREQ_TIMES=y
+          # CONFIG_CPU_FREQ_LIMIT_MAX_FREQ=y # 此选项通常用于限制最大频率，为了性能最大化，暂时不启用或保持默认
+          CONFIG_MEMCG_SWAP=y
+          CONFIG_SWAP_ASYNC_IO=y
+          CONFIG_PAGE_BOOST=y
+          CONFIG_IDLE_PAGE_TRACKING=y
+          CONFIG_PSI=y
+          CONFIG_IO_URING_ASYNC=y
+          CONFIG_BLK_WBT=y
+          CONFIG_BLK_CGROUP_IOCOST=y
           # 网络性能优化 (BBR3)
           CONFIG_BQL=y
           CONFIG_INET=y
