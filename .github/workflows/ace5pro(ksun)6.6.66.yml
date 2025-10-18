@@ -1,4 +1,4 @@
-name: ace5pro(ksun)合并上游6.6.10X
+name: ace5pro(ksun)6.6.66
 on:
   workflow_dispatch:
     inputs:
@@ -211,6 +211,20 @@ jobs:
           patch -s -p1 -F 3 < 1.patch || true
           patch -p1 -F 3 --fuzz=5 < lz4_1.10.0.patch || true
           echo "✅ SUSFS 和 scope_min_manual_hooks_v1.4 patch 应用完成"
+
+      - name: 应用lz4 1.10.0 & zstd 1.5.7补丁
+        run: |
+          if [[ "${{ github.event.inputs.lz4_enable }}" == "1" || "${{ github.event.inputs.lz4_enable }}" == "3" ]]; then
+            echo "正在添加lz4 1.10.0 & zstd 1.5.7补丁…"
+            cd kernel_workspace
+            git clone https://github.com/PxxPei/oppo_oplus_realme_sm8750.git
+            cp ./oppo_oplus_realme_sm8750/zram_patch/001-lz4.patch ./common/
+            cp ./oppo_oplus_realme_sm8750/zram_patch/lz4armv8.S ./common/lib
+            cp ./oppo_oplus_realme_sm8750/zram_patch/002-zstd.patch ./common/
+            cd ./common
+            git apply -p1 < 001-lz4.patch || true
+            patch -p1 < 002-zstd.patch || true
+          fi
           
       - name: Apply lz4kd Patches
         run: |
@@ -231,7 +245,7 @@ jobs:
           cat <<EOF >> ./common/arch/arm64/configs/gki_defconfig
           # KSU 与 SUSFS 配置
           CONFIG_KSU=y
-          CONFIG_KSU_MANUAL_HOOK=y
+          CONFIG_KSU_MANUAL_HOOK=n
           CONFIG_KSU_SUSFS=y
           CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y
           CONFIG_KSU_SUSFS_SUS_PATH=y
@@ -304,11 +318,6 @@ jobs:
           CONFIG_TCP_FASTOPEN=y
           CONFIG_TCP_SACK=y
           CONFIG_TCP_TIMESTAMPS=y
-          # 移除冲突的TCP拥塞算法，仅保留BBR作为默认
-          CONFIG_TCP_CONG_BIC=n
-          CONFIG_TCP_CONG_CUBIC=n
-          CONFIG_TCP_CONG_HTCP=n
-          CONFIG_TCP_CONG_WESTWOOD=n
           
           # IO优化配置
           CONFIG_IO_URING=y
@@ -405,8 +414,10 @@ jobs:
 
          # 进入源码目录
          cd kernel_workspace/kernel_platform/common
+         rm -rf out
 
          # 执行 defconfig
+         export KBUILD_CFLAGS="-fpolly -flto=thin"
          make -j$(nproc) $MAKE_ARGS gki_defconfig
 
          # 编译全部目标
