@@ -373,12 +373,19 @@ jobs:
          export SOURCE_DATE_EPOCH=$(date -d "Tue Jul  1 19:48:18 UTC 2025" +%s)
          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
          
-      - name: Build Kernel
+      - name: 安装和设置编译器环境
         run: |
-         # 加入 clang 到 PATH
-         export PATH="${{ github.workspace }}/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r536225/bin:$PATH"
-         # 加入 ccache 到 PATH
-         export PATH="/usr/lib/ccache:$PATH"
+          mkdir -p clang22
+          cd clang22
+          wget -q https://github.com/ZyCromerZ/Clang/releases/download/22.0.0git-20250928-release/Clang-22.0.0git-20250928.tar.gz
+          tar -zxf Clang-22.0.0git-20250928.tar.gz
+          echo "CLANG_PATH=${{ github.workspace }}/clang22/bin" >> $GITHUB_ENV
+
+      - name: 编译内核
+        run: |
+         export PATH="${{ env.CLANG_PATH }}:${PATH}"
+         export PATH="/usr/lib/ccache:${PATH}"
+          
          # 设置固定内核构建时间
          export KERNEL_TIME="Tue Jul  1 19:48:18 UTC 2025"
          export KBUILD_BUILD_TIMESTAMP="$KERNEL_TIME"
