@@ -341,14 +341,14 @@ jobs:
           else
             echo "SOURCE_DATE_EPOCH=$(date +%s)" >> $GITHUB_ENV
           fi
-      
+
       - name: Add sched_ext
         run: |
          cd ${{ env.KERNEL_PLATFORM_DIR }}
          git clone --depth=1 https://github.com/3620603660/sched_ext.git
          cp -r ./sched_ext/* ./common/kernel/sched
          rm -rf ./sched_ext/.git
-
+      
       - name: 8.2 拉取afdo
         run: |
           cd ${{ env.WORKSPACE_DIR }}
@@ -370,6 +370,7 @@ jobs:
           export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
           export KBUILD_BUILD_TIMESTAMP="${KERNEL_TIME:-$(date -u '+%a %b %d %H:%M:%S UTC %Y')}"
           export SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
+
           export AFDO_PROFILE="${{ github.workspace }}/${{ env.WORKSPACE_DIR }}/afdo/kernel.afdo"
           if [ ! -f "$AFDO_PROFILE" ]; then
              echo "Error: AFDO profile not found at $AFDO_PROFILE"
@@ -392,6 +393,7 @@ jobs:
           export KBUILD_CFLAGS="-fpolly -flto=thin"
           make $MAKE_ARGS gki_defconfig
           make $MAKE_ARGS -j$(nproc)
+
           echo "✅ 内核编译完成"
 
       - name: 11.1 显示编译结果
