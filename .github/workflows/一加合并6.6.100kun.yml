@@ -365,14 +365,13 @@ jobs:
           export PATH="${{ env.CLANG_PATH }}:${PATH}"
           export PATH="/usr/lib/ccache:${PATH}"
           
-          export KERNEL_TIME="${{ github.event.inputs.BUILD_TIMESTAMP }}"
-          export KBUILD_BUILD_TIMESTAMP="${KERNEL_TIME:-$(date -u '+%a %b %d %H:%M:%S UTC %Y')}"
+          export KBUILD_BUILD_TIMESTAMP="${{ github.event.inputs.BUILD_TIMESTAMP }}"
           export SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
 
           export AFDO_PROFILE="${{ github.workspace }}/${{ env.WORKSPACE_DIR }}/afdo/kernel.afdo"
           if [ ! -f "$AFDO_PROFILE" ]; then
-             echo "Error: AFDO profile not found at $AFDO_PROFILE"
-              exit 1
+             echo "❌ Error: AFDO profile not found at $AFDO_PROFILE"
+             exit 1
           fi
           
           export KCFLAGS="-Wno-error -mllvm -thinlto-assume-merged -fauto-profile=$AFDO_PROFILE"
@@ -387,13 +386,17 @@ jobs:
           cd ${{ env.KERNEL_PLATFORM_DIR }}/common
           rm -rf out
           
-          echo "开始编译内核..."
-          export KBUILD_CFLAGS="-fpolly -flto=thin"
+          echo "开始生成配置文件..."
           make $MAKE_ARGS gki_defconfig
-          make $MAKE_ARGS -j$(nproc)
+          
+          echo "开始编译内核..."
+          make $MAKE_ARGS -j$(nproc ) Image || {
+            echo "❌ 编译失败，正在尝试使用详细日志重新编译..."
+            make $MAKE_ARGS -j1 V=1 Image
+            exit 1
+          }
 
           echo "✅ 内核编译完成"
-
       - name: 11.1 显示编译结果
         run: |
           cd ${{ env.KERNEL_PLATFORM_DIR }}/common
