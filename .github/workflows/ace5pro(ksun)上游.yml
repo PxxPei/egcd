@@ -359,7 +359,7 @@ jobs:
       - name: 拉取并集成 sched_ext 调度器
         run: |
          cd kernel_workspace/kernel_platform/
-         git clone https://github.com/3620603660/sched_ext.git
+         git clone https://github.com/PxxPei/sched_ext.git
          cp -r ./sched_ext/* ./common/kernel/sched
          rm -rf ./sched_ext/.git
 
@@ -405,10 +405,8 @@ jobs:
 
          # 进入源码目录
          cd kernel_workspace/kernel_platform/common
-         rm -rf out
 
          # 执行 defconfig
-         export KBUILD_CFLAGS="-fpolly -flto=thin"
          make -j$(nproc) $MAKE_ARGS gki_defconfig
 
          # 编译全部目标
@@ -417,7 +415,7 @@ jobs:
          # 创建输出目录并复制 Image
          mkdir -p ../dist
          cp out/arch/arm64/boot/Image ../dist/
-
+         
       - name: 验证内核构建时间
         run: |
          strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC"
