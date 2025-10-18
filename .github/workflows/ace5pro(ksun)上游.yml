@@ -226,15 +226,10 @@ jobs:
 
       - name: 设置内核优化配置
         run: |
-          cd ${{ env.KERNEL_PLATFORM_DIR }}
-          CONFIG_FILE="./common/arch/arm64/configs/gki_defconfig"
-          if [ ! -f "$CONFIG_FILE" ]; then
-            echo "Error: 配置文件 $CONFIG_FILE 不存在"
-            exit 1
-          fi
-          cat >> "$CONFIG_FILE" << 'EOF'
-          # 优化后的一加Ace5 Pro (骁龙8e, Android 15, Kernel 6.6.10X) 内核配置
-          # KernelSU 配置
+          cd kernel_workspace/kernel_platform
+          # 向 gki_defconfig 中追加配置
+          cat <<EOF >> ./common/arch/arm64/configs/gki_defconfig
+          # KSU 与 SUSFS 配置
           CONFIG_KSU=y
           CONFIG_KSU_MANUAL_HOOK=y
           CONFIG_KSU_SUSFS=y
