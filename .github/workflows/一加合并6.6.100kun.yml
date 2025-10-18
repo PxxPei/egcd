@@ -136,7 +136,7 @@ jobs:
          cd kernel_workspace
          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ github.event.inputs.ANDROID_TARGET_VERSION }}-${{ github.event.inputs.KERNEL_BASE_VERSION }}
          git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU_patch.git
-         git clone https://$TOKEN@github.com/3620603660/boot.git
+         git clone https://$TOKEN@github.com/PxxPei/boot.git
          git clone https://github.com/WildPlusKernel/kernel_patches.git
          git clone https://github.com/PxxPei/GKI_KernelSU_SUSFS.git zzh_patch
          cd kernel_platform
