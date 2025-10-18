@@ -214,18 +214,29 @@ jobs:
 
       - name: 应用lz4 1.10.0 & zstd 1.5.7补丁
         run: |
-          set -e
-          echo "正在添加lz4 1.10.0 & zstd 1.5.7补丁…"
-          cd kernel_workspace
-            git clone https://github.com/PxxPei/oppo_oplus_realme_sm8750.git
-            cp ./oppo_oplus_realme_sm8750/zram_patch/001-lz4.patch ./common/
-            cp ./oppo_oplus_realme_sm8750/zram_patch/lz4armv8.S ./common/lib
-            cp ./oppo_oplus_realme_sm8750/zram_patch/002-zstd.patch ./common/
-            cd ./common
-            git apply -p1 < 001-lz4.patch || true
-            patch -p1 < 002-zstd.patch || true
-          fi
-          
+         set -e
+         echo "正在添加lz4 1.10.0 & zstd 1.5.7补丁…"
+    
+         # 进入内核工作区
+         cd kernel_workspace
+    
+         # 克隆补丁仓库
+         git clone https://github.com/PxxPei/oppo_oplus_realme_sm8750.git
+    
+         # 复制补丁文件到正确的位置
+         # 注意：目标路径是目录名 ，末尾不应有多余的斜杠
+         cp ./oppo_oplus_realme_sm8750/zram_patch/001-lz4.patch ./common
+         cp ./oppo_oplus_realme_sm8750/zram_patch/lz4armv8.S ./common/lib
+         cp ./oppo_oplus_realme_sm8750/zram_patch/002-zstd.patch ./common
+    
+         # 进入 common 目录以应用补丁
+         cd ./common
+    
+         # 应用补丁
+         # 使用 || true 避免在补丁已应用时出错
+         git apply 001-lz4.patch || true
+         patch -p1 < 002-zstd.patch || true
+         
       - name: Apply lz4kd Patches
         run: |
          set -e
