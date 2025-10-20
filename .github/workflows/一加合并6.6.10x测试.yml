@@ -155,6 +155,25 @@ jobs:
          patch -p1 -F 3 < syscall_hooks.patch || true
          patch -s -p1 -F 3 < 1.patch
          echo "✅ SUSFS 和 syscall_hooks patch 应用完成"
+
+      - name: 应用lz4 1.10.0 & zstd 1.5.7补丁
+        run: |
+         echo "正在添加lz4 1.10.0 & zstd 1.5.7补丁…"
+         # 进入内核工作区
+         cd kernel_workspace
+         # 克隆补丁仓库
+         git clone https://github.com/PxxPei/oppo_oplus_realme_sm8750.git
+         # --- 新增步骤：确保目标目录存在 ---
+         mkdir -p ./common/lib
+         # 复制补丁文件到正确的位置
+         cp ./oppo_oplus_realme_sm8750/zram_patch/001-lz4.patch ./common
+         cp ./oppo_oplus_realme_sm8750/zram_patch/lz4armv8.S ./common/lib
+         cp ./oppo_oplus_realme_sm8750/zram_patch/002-zstd.patch ./common
+         # 进入 common 目录以应用补丁
+         cd ./common
+         # 应用补丁
+         git apply 001-lz4.patch || true
+         patch -p1 < 002-zstd.patch || true
          
       - name: Apply Hide Stuff Patches
         run: |
